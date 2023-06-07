@@ -1,0 +1,135 @@
+name: d2nerf_diff
+tag: 'dir-gttest-no_grid'
+seed: 42
+source: sapien/stapler/103111
+exp_dir: ./exp/${source}/${name}
+runs_dir: ./runs/${source}/${name}
+
+dataset:
+  name: my_d2nerf
+  scene: 103111
+  root_dir: ./load/${source}/
+  img_wh:
+    - 800
+    - 800
+  train_scale: 1.0
+  test_scale: 0.4
+  near_plane: 2.0
+  far_plane: 6.0
+  white_bkgd: true
+  spheric_poses: false
+  use_pixel_centers: true
+  train_split: 'train'
+  val_split: 'val'
+  test_split: 'test'
+
+model:
+  name: d2nerf_diff
+  radius: 1.5
+  motion_gt: true
+  init_angle: 0.2 # radian
+  ignore_translate: true
+  motion_gt_path: ./data/${source}/textured_objs/trans.json
+  render_step_size: 5.e-3
+  num_samples_per_ray: 1024
+  train_num_rays: 256
+  max_train_num_rays: 1024
+  grid_prune: false
+  grid_warmup: 10000
+  dynamic_ray_sampling: true
+  batch_image_sampling: true
+  randomized: true
+  ray_chunk: 4096
+  white_bkgd: true
+  transform_dir: false
+  use_max_mask: false
+  use_mask_w_diff: false
+  use_distortion: false
+  ray_marching:
+    alpha_thre: 0.
+    early_stop_eps: 0.
+  comp_rendering:
+    alpha_thre: 0.
+    early_stop_eps: 0.
+  geometry:
+    name: volume-density
+    radius: ${model.radius}
+    feature_dim: 16
+    density_activation: trunc_exp
+    density_bias: -1
+    isosurface:
+      method: mc
+      resolution: 256
+      chunk: 2097152
+      threshold: 6.0
+    xyz_encoding_config:
+      otype: HashGrid
+      n_levels: 16
+      n_features_per_level: 2
+      log2_hashmap_size: 19
+      base_resolution: 16
+      per_level_scale: 1.447269237440378  
+    mlp_network_config:
+      otype: FullyFusedMLP
+      activation: ReLU
+      output_activation: none
+      n_neurons: 64
+      n_hidden_layers: 1
+  texture:
+    name: volume-radiance
+    input_feature_dim: ${model.geometry.feature_dim}
+    dir_encoding_config:
+      otype: SphericalHarmonics
+      degree: 4    
+    mlp_network_config:
+      otype: FullyFusedMLP
+      activation: ReLU
+      output_activation: Sigmoid
+      n_neurons: 64
+      n_hidden_layers: 2
+  
+system:
+  name: d2nerf_diff-system
+  save_volume: false
+  use_mse_loss: false
+  loss:
+    lambda_rgb: 1.
+    lambda_opaque: 0.
+    lambda_blend_ratio: 0.000
+    lambda_distortion: 0.
+    lambda_min_alpha: 1.0
+    lambda_mask: 0.
+  optimizer:
+    name: Adam
+    args:
+      lr: 0.0001
+      betas: [0.9, 0.99]
+      eps: 1.e-15
+    params:
+      geometry:
+          lr: 0.0005
+      texture:
+          lr: 0.0005
+    trans_params:
+      lr: 0.005
+  scheduler:
+    name: MultiStepLR
+    interval: step
+    args:
+      milestones: [10000, 15000, 18000]
+      gamma: 0.33
+
+checkpoint:
+  save_top_k: -1
+  every_n_train_steps: 5000
+
+trainer:
+  fast_dev_run: false
+  max_steps: 10000
+  log_every_n_steps: 100
+  num_sanity_val_steps: 0
+  val_check_interval: 100
+  limit_train_batches: 1.0
+  limit_val_batches: 1
+  enable_progress_bar: true 
+  precision: 16
