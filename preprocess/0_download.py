@@ -35,5 +35,5 @@ def rewrite_json_from_urdf(model_id, download=False):
         json_out_file.close()
     
 
-model_id = '100189'
+model_id = '101917'
 rewrite_json_from_urdf(model_id, download=True)

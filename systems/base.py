@@ -196,8 +196,8 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         res = self.config.model.geometry.isosurface.resolution
         thre = float(self.config.model.geometry.isosurface.threshold)
         dyn_can_filename = f"it{it}_dynamic_{res}_thre{thre}.ply"
-        dyn_start_filename = f"it{it}_trans2start_{res}_thre{thre}.ply"
-        dyn_end_filename = f"it{it}_trans2end_{res}_thre{thre}.ply"
+        dyn_start_filename = f"it{it}_dyn_t0_{res}_thre{thre}.ply"
+        dyn_end_filename = f"it{it}_dyn_t1_{res}_thre{thre}.ply"
 
         # extract geometry from the fields
         mesh_dict = self.model.isosurface()
@@ -274,8 +274,8 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         # Chamfer-L1 Distance at start state
         cd_s, cd_d_start, cd_w_start = eval_CD(
             self.get_save_path(f"it{it}_static_{res}_thre{thre}.ply"),
-            self.get_save_path(f"it{it}_trans2start_{res}_thre{thre}.ply"),
-            self.get_save_path(f"it{it}_whole_trans2start_{res}_thre{thre}.ply"),
+            self.get_save_path(f"it{it}_dyn_t0_{res}_thre{thre}.ply"),
+            self.get_save_path(f"it{it}_start_{res}_thre{thre}.ply"),
             join(dirname(self.config.model.motion_gt_path), 'start', 'start_static_rotate.ply'),
             join(dirname(self.config.model.motion_gt_path), 'start', 'start_dynamic_rotate.ply'),
             join(dirname(self.config.model.motion_gt_path), 'start', 'start_rotate.ply')

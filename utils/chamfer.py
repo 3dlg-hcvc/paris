@@ -177,14 +177,14 @@ def eval_CD(pred_s_ply, pred_d_ply, pred_w_ply, gt_s_ply, gt_d_ply, gt_w_ply):
     combine_pred_mesh([pred_s_ply, pred_d_ply], pred_w_ply)
 
     # resave the mesh just in case the original one is broken
-    mesh = o3d.io.read_triangle_mesh(gt_w_ply)
-    gt_w_resave_ply = gt_w_ply[:-4]+'_resave.ply'
-    o3d.io.write_triangle_mesh(gt_w_resave_ply, mesh)
+    # mesh = o3d.io.read_triangle_mesh(gt_w_ply)
+    # gt_w_resave_ply = gt_w_ply[:-4]+'_resave.ply'
+    # o3d.io.write_triangle_mesh(gt_w_resave_ply, mesh)
 
     # compute synmetric distance
     chamfer_dist_d = compute_recon_error(pred_d_ply, gt_d_ply, n_samples=10000, vis=False)
     chamfer_dist_s = compute_recon_error(pred_s_ply, gt_s_ply, n_samples=10000, vis=False)
-    chamfer_dist_w = compute_recon_error(pred_w_ply, gt_w_resave_ply, n_samples=10000, vis=False)
+    chamfer_dist_w = compute_recon_error(pred_w_ply, gt_w_ply, n_samples=10000, vis=False)
 
     return chamfer_dist_s, chamfer_dist_d, chamfer_dist_w
 
