@@ -172,14 +172,13 @@ def entropy_loss(src, clip_eps=1e-6, skew=1.0):
 #     deg = torch.rad2deg(angle)
 #     return deg
 
-def geodesic_distance(q, gt_R):
+def geodesic_distance(pred_R, gt_R):
     '''
     q is the output from the network (rotation from t=0.5 to t=1)
     gt_R is the GT rotation from t=0 to t=1
     '''
-    R_half = R_from_quaternions(q.squeeze(0)).cpu()
-    R_full = torch.matmul(R_half, R_half)
-    R_diff = torch.matmul(R_full, gt_R.T)
+    pred_R, gt_R = pred_R.cpu(), gt_R.cpu()
+    R_diff = torch.matmul(pred_R, gt_R.T)
     cos_angle = torch.clip((torch.trace(R_diff) - 1.0) * 0.5, min=-1., max=1.)
     angle = torch.rad2deg(torch.arccos(cos_angle)) 
     return angle

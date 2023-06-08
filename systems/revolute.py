@@ -5,7 +5,7 @@ from systems.base import BaseSystem
 from systems.criterions import binary_cross_entropy, entropy_loss
 
 from systems.utils import load_gt_info
-from utils.rotation import quaternion_to_axis_angle
+from utils.rotation import quaternion_to_axis_angle, R_from_axis_angle
 from utils.plot_camera import plot_camera
 
 
@@ -203,22 +203,26 @@ class RevoluteSystem(BaseSystem):
         
         writer.release()
 
-
     
     def convert_motion_format(self):
         # output motion params
         axis_o = self.model.axis_o.detach()
         quaternions = self.model.quaternions.detach()
-        # convert the axis angle format
-        axis_d, half_angle = quaternion_to_axis_angle(quaternions)  # the output from the network is the rotation angle from t=0 to t=0.5   
+
+        # the output from the network is the rotation angle from t=0 to t=0.5   
+        axis_d, half_angle = quaternion_to_axis_angle(quaternions) 
         rot_angle = 2. * half_angle 
+        # convert to rotation matrix (from t=0 to t=1)
         if torch.isnan(axis_d).sum().item() > 0: # the rotation is an Identity Matrix
-            axis_d = torch.zeros(3, device=self.local_rank)
+            axis_d = torch.ones(3, device=self.local_rank) # random direction
+            rot_angle = torch.zeros(1, device=self.local_rank)
+        else:
+            R = R_from_axis_angle(axis_d, rot_angle)
         motion = {
             'type': 'rotate',
             'axis_o': axis_o,
-            'quaternions': quaternions,
             'axis_d': axis_d,
-            'rot_angle': rot_angle
+            'rot_angle': rot_angle,
+            'R': R,
         }
         return motion

@@ -324,57 +324,7 @@ def parse_optimizer(config, model):
     # print(params)
     return optim
 
-# def d2nerf_parse_optimizer(config, model, use_gt_trans, use_translate):
-#     if hasattr(config, 'params'):
-#         params = [{'params': get_parameters(model, f'static_{name}'), 'name': f'static.{name}', **args} for name, args in config.params.items()]
-#         params.extend([{'params': get_parameters(model, f'dynamic_{name}'), 'name':  f'dynamic.{name}', **args} for name, args in config.params.items()])
-#         rank_zero_debug('Specify optimizer params:', config.params)
-#     else:
-#         params = [{'params': model.parameters()}]
-    
-#     if not use_gt_trans:
-#         if hasattr(config, 'trans_params'):  # hard coding
-#             params.extend([{'params': model.axis_o, 'name': 'axis_origin', 'lr': config.trans_params['lr']}])
-#             params.extend([{'params': model.axis_d, 'name': 'axis_direction', 'lr': config.trans_params['lr']}])
-#             params.extend([{'params': model.rot_angle, 'name': 'rot_angle', 'lr': config.trans_params['lr']}])
-#             if use_translate:
-#                 params.extend([{'params': model.translation, 'name': 'translation', 'lr': config.trans_params['lr']}])
-#         else:
-#             raise ValueError('Please specify the optim params for trans_params')
 
-#     if config.name in ['FusedAdam']:
-#         import apex
-#         optim = getattr(apex.optimizers, config.name)(params, **config.args)
-#     else:
-#         optim = getattr(torch.optim, config.name)(params, **config.args)
-
-#     return optim
-
-# def d2nerf_quat_parse_optimizer(config, model, use_gt_trans, use_translate):
-#     if hasattr(config, 'params'):
-#         params = [{'params': get_parameters(model, f'static_{name}'), 'name': f'static.{name}', **args} for name, args in config.params.items()]
-#         params.extend([{'params': get_parameters(model, f'dynamic_{name}'), 'name':  f'dynamic.{name}', **args} for name, args in config.params.items()])
-#         rank_zero_debug('Specify optimizer params:', config.params)
-#     else:
-#         params = [{'params': model.parameters()}]
-    
-#     if not use_gt_trans:
-#         if hasattr(config, 'trans_params'):  # hard coding
-#                 params.extend([{'params': model.axis_o, 'name': 'axis_origin', 'lr': config.trans_params['lr']}])
-#                 params.extend([{'params': model.quaternions, 'name': 'quaternions', 'lr': config.trans_params['lr']}])
-#                 if use_translate:
-#                     params.extend([{'params': model.translation, 'name': 'translation', 'lr': config.trans_params['lr']}])
-#         else:
-#             raise ValueError('Please specify the optim params for trans_params')
-
-#     if config.name in ['FusedAdam']:
-#         import apex
-#         optim = getattr(apex.optimizers, config.name)(params, **config.args)
-#     else:
-#         optim = getattr(torch.optim, config.name)(params, **config.args)
-
-#     return optim
-    
 
 def parse_scheduler(config, optimizer):
     interval = config.get('interval', 'epoch')
@@ -400,42 +350,6 @@ def parse_scheduler(config, optimizer):
 def update_module_step(m, epoch, global_step):
     if hasattr(m, 'update_step'):
         m.update_step(epoch, global_step)
-
-
-# def load_gt_axis(path: str):
-#     '''
-#     load GT motion axis from the trans.json
-#     return a list of 3D points as head and tail point of the axis for visulization later
-#     '''
-#     with open(path, mode='r') as f:
-#         meta = json.load(f)
-#         trans_info = meta['trans_info']
-#         f.close()
-#     axis_o = torch.tensor(trans_info['axis']['o']).float()
-#     axis_d = torch.tensor(trans_info['axis']['d']).float()
-#     # frame_R_blender = torch.tensor([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
-#     # axis_o = torch.matmul(frame_R_blender, axis_o)
-#     # axis_d = torch.matmul(frame_R_blender, axis_d)
-#     P0 = axis_o.unsqueeze(0)
-#     P1 = (axis_o + axis_d).unsqueeze(0)
-#     ret = torch.cat([P0, P1], dim=0)
-#     return ret
-
-# def load_gt_axis_real(path: str):
-#     '''
-#     load GT motion axis from the trans.json
-#     return a list of 3D points as head and tail point of the axis for visulization later
-#     '''
-#     with open(path, mode='r') as f:
-#         meta = json.load(f)
-#         trans_info = meta['trans_info']
-#         f.close()
-#     axis_o = torch.tensor(trans_info['axis']['o']).float()
-#     axis_d = torch.tensor(trans_info['axis']['d']).float()
-#     P0 = axis_o.unsqueeze(0)
-#     P1 = (axis_o + axis_d).unsqueeze(0)
-#     ret = torch.cat([P0, P1], dim=0)
-#     return ret
 
 def load_gt_info(path: str):
     with open(path, mode='r') as f:
@@ -471,49 +385,6 @@ def load_gt_info(path: str):
             'vis_axis': vis_axis,
         }
 
-# def load_gt_info_real(path: str):
-#     with open(path, mode='r') as f:
-#         meta = json.load(f)
-#         trans_info = meta['trans_info']
-#         f.close()
-
-#     axis_d = torch.tensor(trans_info['axis']['d']).float()
-#     angle = torch.tensor([(trans_info['rotate']['r'] - trans_info['rotate']['l']) * 0.5]).float()
-#     theta = torch.deg2rad(angle)
-#     R = R_from_axis_angle(axis_d, theta)
-#     return {
-#         'R': R,
-#     }
-
-# def load_gt_info_pris(path: str):
-#     with open(path, mode='r') as f:
-#         meta = json.load(f)
-#         trans_info = meta['trans_info']
-#         f.close()
-
-#     axis_d = torch.tensor(trans_info['axis']['d']).float()
-#     frame_R_blender = torch.tensor([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
-#     dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) * 0.5]).float()
-#     # dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) ]).float()
-
-#     axis_d = torch.matmul(frame_R_blender, axis_d)
-#     return {
-#         'axis_d': axis_d,
-#         'dist': dist
-#     }
-
-# def load_gt_info_pris_real(path: str):
-#     with open(path, mode='r') as f:
-#         meta = json.load(f)
-#         trans_info = meta['trans_info']
-#         f.close()
-
-#     axis_d = torch.tensor(trans_info['axis']['d']).float()
-#     dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) * 0.5]).float()
-#     return {
-#         'axis_d': axis_d,
-#         'dist': dist
-#     }
 
 def proj2img(P: torch.Tensor, w2c: torch.Tensor, K: torch.Tensor):
     P, w2c, K = P.cpu(),w2c.cpu(), K.cpu()

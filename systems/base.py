@@ -223,7 +223,7 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         motion_type = motion['type']
         if motion_type == 'rotate':
             # rotation difference
-            geo_dist = geodesic_distance(motion['quaternions'], self.gt_info['R'])
+            geo_dist = geodesic_distance(motion['R'].squeeze_(0), self.gt_info['R'])
             self.log(f'{mode}/geo_dist', geo_dist, prog_bar=True, rank_zero_only=True)
             # angular and positional errors
             ang_err, pos_err = axis_metrics(motion, self.gt_info)
@@ -420,7 +420,7 @@ class BaseSystem(pl.LightningModule, SaverMixin):
             })
         
         self.save_json(f'it{it}_{mode}_metrics.json', metrics)
-        
+
     """
     Implementing on_after_batch_transfer of DataModule does the same.
     But on_after_batch_transfer does not support DP.

@@ -20,7 +20,6 @@ class PrismaticSystem(BaseSystem):
         self.gt_info = load_gt_info(self.config.model.motion_gt_path)
 
 
-    
     def on_train_start(self) -> None:
         self.dataset = self.trainer.datamodule.train_dataloader().dataset
         plot_camera(self.dataset.vis_cam_0, self.get_save_path('camera/cam_start.ply'), color=[1, 0, 0])
