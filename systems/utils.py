@@ -402,111 +402,122 @@ def update_module_step(m, epoch, global_step):
         m.update_step(epoch, global_step)
 
 
-def load_gt_axis(path: str):
-    '''
-    load GT motion axis from the trans.json
-    return a list of 3D points as head and tail point of the axis for visulization later
-    '''
-    with open(path, mode='r') as f:
-        meta = json.load(f)
-        trans_info = meta['trans_info']
-        f.close()
-    axis_o = torch.tensor(trans_info['axis']['o']).float()
-    axis_d = torch.tensor(trans_info['axis']['d']).float()
-    frame_R_blender = torch.tensor([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
-    axis_o = torch.matmul(frame_R_blender, axis_o)
-    axis_d = torch.matmul(frame_R_blender, axis_d)
-    P0 = axis_o.unsqueeze(0)
-    P1 = (axis_o + axis_d).unsqueeze(0)
-    ret = torch.cat([P0, P1], dim=0)
-    return ret
+# def load_gt_axis(path: str):
+#     '''
+#     load GT motion axis from the trans.json
+#     return a list of 3D points as head and tail point of the axis for visulization later
+#     '''
+#     with open(path, mode='r') as f:
+#         meta = json.load(f)
+#         trans_info = meta['trans_info']
+#         f.close()
+#     axis_o = torch.tensor(trans_info['axis']['o']).float()
+#     axis_d = torch.tensor(trans_info['axis']['d']).float()
+#     # frame_R_blender = torch.tensor([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
+#     # axis_o = torch.matmul(frame_R_blender, axis_o)
+#     # axis_d = torch.matmul(frame_R_blender, axis_d)
+#     P0 = axis_o.unsqueeze(0)
+#     P1 = (axis_o + axis_d).unsqueeze(0)
+#     ret = torch.cat([P0, P1], dim=0)
+#     return ret
 
-def load_gt_axis_real(path: str):
-    '''
-    load GT motion axis from the trans.json
-    return a list of 3D points as head and tail point of the axis for visulization later
-    '''
-    with open(path, mode='r') as f:
-        meta = json.load(f)
-        trans_info = meta['trans_info']
-        f.close()
-    axis_o = torch.tensor(trans_info['axis']['o']).float()
-    axis_d = torch.tensor(trans_info['axis']['d']).float()
-    P0 = axis_o.unsqueeze(0)
-    P1 = (axis_o + axis_d).unsqueeze(0)
-    ret = torch.cat([P0, P1], dim=0)
-    return ret
+# def load_gt_axis_real(path: str):
+#     '''
+#     load GT motion axis from the trans.json
+#     return a list of 3D points as head and tail point of the axis for visulization later
+#     '''
+#     with open(path, mode='r') as f:
+#         meta = json.load(f)
+#         trans_info = meta['trans_info']
+#         f.close()
+#     axis_o = torch.tensor(trans_info['axis']['o']).float()
+#     axis_d = torch.tensor(trans_info['axis']['d']).float()
+#     P0 = axis_o.unsqueeze(0)
+#     P1 = (axis_o + axis_d).unsqueeze(0)
+#     ret = torch.cat([P0, P1], dim=0)
+#     return ret
 
 def load_gt_info(path: str):
     with open(path, mode='r') as f:
         meta = json.load(f)
         trans_info = meta['trans_info']
         f.close()
+    
+    motion_type = meta['input']['motion']['type']
 
+    axis_o = torch.tensor(trans_info['axis']['o']).float()
     axis_d = torch.tensor(trans_info['axis']['d']).float()
-    frame_R_blender = torch.tensor([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
-    angle = torch.tensor([(trans_info['rotate']['r'] - trans_info['rotate']['l']) * 0.5]).float()
-    # angle = torch.tensor([(trans_info['rotate']['r'] - trans_info['rotate']['l']) ]).float()
 
-    axis_d = torch.matmul(frame_R_blender, axis_d)
-    theta = torch.deg2rad(angle)
-    R = R_from_axis_angle(axis_d, theta)
-    dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) * 0.5]).float()
-    quat = axis_angle_to_quaternions(axis_d, theta)
-    return {
-        'R': R,
-        'quaternions': quat,
-        'dist': dist,
-        't_axis_d': axis_d
-    }
+    axis_P0 = axis_o.unsqueeze(0)
+    axis_P1 = (axis_o + axis_d).unsqueeze(0)
+    vis_axis = torch.cat([axis_P0, axis_P1], dim=0)
 
-def load_gt_info_real(path: str):
-    with open(path, mode='r') as f:
-        meta = json.load(f)
-        trans_info = meta['trans_info']
-        f.close()
+    if motion_type == 'rotate':
+        angle = torch.tensor([(trans_info['rotate']['r'] - trans_info['rotate']['l'])]).float()
+        theta = torch.deg2rad(angle)
+        R = R_from_axis_angle(axis_d, theta)
+        return {
+            'R': R,
+            'axis_o': axis_o,
+            'axis_d': axis_d,
+            'vis_axis': vis_axis,
+        }
+    elif motion_type == 'translate':
+        dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l'])]).float()
+        return {
+            'dist': dist,
+            'axis_o': axis_o,
+            'axis_d': axis_d,
+            'vis_axis': vis_axis,
+        }
 
-    axis_d = torch.tensor(trans_info['axis']['d']).float()
-    angle = torch.tensor([(trans_info['rotate']['r'] - trans_info['rotate']['l']) * 0.5]).float()
-    theta = torch.deg2rad(angle)
-    R = R_from_axis_angle(axis_d, theta)
-    return {
-        'R': R,
-    }
+# def load_gt_info_real(path: str):
+#     with open(path, mode='r') as f:
+#         meta = json.load(f)
+#         trans_info = meta['trans_info']
+#         f.close()
 
-def load_gt_info_pris(path: str):
-    with open(path, mode='r') as f:
-        meta = json.load(f)
-        trans_info = meta['trans_info']
-        f.close()
+#     axis_d = torch.tensor(trans_info['axis']['d']).float()
+#     angle = torch.tensor([(trans_info['rotate']['r'] - trans_info['rotate']['l']) * 0.5]).float()
+#     theta = torch.deg2rad(angle)
+#     R = R_from_axis_angle(axis_d, theta)
+#     return {
+#         'R': R,
+#     }
 
-    axis_d = torch.tensor(trans_info['axis']['d']).float()
-    frame_R_blender = torch.tensor([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
-    dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) * 0.5]).float()
-    # dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) ]).float()
+# def load_gt_info_pris(path: str):
+#     with open(path, mode='r') as f:
+#         meta = json.load(f)
+#         trans_info = meta['trans_info']
+#         f.close()
 
-    axis_d = torch.matmul(frame_R_blender, axis_d)
-    return {
-        'axis_d': axis_d,
-        'dist': dist
-    }
+#     axis_d = torch.tensor(trans_info['axis']['d']).float()
+#     frame_R_blender = torch.tensor([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
+#     dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) * 0.5]).float()
+#     # dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) ]).float()
 
-def load_gt_info_pris_real(path: str):
-    with open(path, mode='r') as f:
-        meta = json.load(f)
-        trans_info = meta['trans_info']
-        f.close()
+#     axis_d = torch.matmul(frame_R_blender, axis_d)
+#     return {
+#         'axis_d': axis_d,
+#         'dist': dist
+#     }
 
-    axis_d = torch.tensor(trans_info['axis']['d']).float()
-    dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) * 0.5]).float()
-    return {
-        'axis_d': axis_d,
-        'dist': dist
-    }
+# def load_gt_info_pris_real(path: str):
+#     with open(path, mode='r') as f:
+#         meta = json.load(f)
+#         trans_info = meta['trans_info']
+#         f.close()
+
+#     axis_d = torch.tensor(trans_info['axis']['d']).float()
+#     dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l']) * 0.5]).float()
+#     return {
+#         'axis_d': axis_d,
+#         'dist': dist
+#     }
 
 def proj2img(P: torch.Tensor, w2c: torch.Tensor, K: torch.Tensor):
     P, w2c, K = P.cpu(),w2c.cpu(), K.cpu()
-    coord_R = torch.tensor([ # blen
+    coord_R = torch.tensor([ # blender coordinates
         [1., 0., 0.],
         [0., -1., 0.],
         [0., 0., -1.],

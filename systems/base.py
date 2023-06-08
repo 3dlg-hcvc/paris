@@ -159,8 +159,8 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         axis_d = motion['axis_d'].unsqueeze(0)
         pred_axis = torch.cat([axis_o, axis_o+axis_d], dim=0)
 
-        gt_axis_0 = proj2img(self.gt_axis, gt['w2c_0'], gt['K_0'])
-        gt_axis_1 = proj2img(self.gt_axis, gt['w2c_1'], gt['K_1'])
+        gt_axis_0 = proj2img(self.gt_info['vis_axis'], gt['w2c_0'], gt['K_0'])
+        gt_axis_1 = proj2img(self.gt_info['vis_axis'], gt['w2c_1'], gt['K_1'])
         pred_axis_0 = proj2img(pred_axis, gt['w2c_0'], gt['K_0'])
         pred_axis_1 = proj2img(pred_axis, gt['w2c_1'], gt['K_1'])
 
@@ -226,7 +226,7 @@ class BaseSystem(pl.LightningModule, SaverMixin):
             geo_dist = geodesic_distance(motion['quaternions'], self.gt_info['R'])
             self.log(f'{mode}/geo_dist', geo_dist, prog_bar=True, rank_zero_only=True)
             # angular and positional errors
-            ang_err, pos_err = axis_metrics(motion, self.gt_axis)
+            ang_err, pos_err = axis_metrics(motion, self.gt_info)
             self.log(f'{mode}/ang_err', ang_err, prog_bar=True, rank_zero_only=True)
             self.log(f'{mode}/pos_err', pos_err, prog_bar=True, rank_zero_only=True)
             return {
@@ -239,7 +239,7 @@ class BaseSystem(pl.LightningModule, SaverMixin):
             trans_err = translational_error(motion, self.gt_info)
             self.log(f'{mode}/trans_err', trans_err, prog_bar=True, rank_zero_only=True)
             # angular errors
-            ang_err, _ = axis_metrics(motion, self.gt_axis)
+            ang_err, _ = axis_metrics(motion, self.gt_info)
             self.log(f'{mode}/ang_err', ang_err, prog_bar=True, rank_zero_only=True)
             return {
                 "trans_err": trans_err.item(), 
@@ -261,18 +261,18 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         # configurations
         res = self.config.model.geometry.isosurface.resolution
         thre = float(self.config.model.geometry.isosurface.threshold)
-        # Chamfer-L1 Distance at canonical state
-        cd_s, cd_d_can, cd_w_can = eval_CD(
-            self.get_save_path(f"it{it}_static_{res}_thre{thre}.ply"),
-            self.get_save_path(f"it{it}_dynamic_{res}_thre{thre}.ply"),
-            self.get_save_path(f"it{it}_whole_{res}_thre{thre}.ply"),
-            join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_static_rotate.ply'),
-            join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_dynamic_rotate.ply'),
-            join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_rotate.ply')
-        )
+        # # Chamfer-L1 Distance at canonical state
+        # cd_s, cd_d_can, cd_w_can = eval_CD(
+        #     self.get_save_path(f"it{it}_static_{res}_thre{thre}.ply"),
+        #     self.get_save_path(f"it{it}_dynamic_{res}_thre{thre}.ply"),
+        #     self.get_save_path(f"it{it}_whole_{res}_thre{thre}.ply"),
+        #     join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_static_rotate.ply'),
+        #     join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_dynamic_rotate.ply'),
+        #     join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_rotate.ply')
+        # )
 
         # Chamfer-L1 Distance at start state
-        _, cd_d_start, cd_w_start = eval_CD(
+        cd_s, cd_d_start, cd_w_start = eval_CD(
             self.get_save_path(f"it{it}_static_{res}_thre{thre}.ply"),
             self.get_save_path(f"it{it}_trans2start_{res}_thre{thre}.ply"),
             self.get_save_path(f"it{it}_whole_trans2start_{res}_thre{thre}.ply"),
@@ -280,7 +280,7 @@ class BaseSystem(pl.LightningModule, SaverMixin):
             join(dirname(self.config.model.motion_gt_path), 'start', 'start_dynamic_rotate.ply'),
             join(dirname(self.config.model.motion_gt_path), 'start', 'start_rotate.ply')
         )
-        return cd_s, cd_d_can, cd_w_can, cd_d_start, cd_w_start
+        return cd_s, cd_d_start, cd_w_start
     
     def save_visuals(self, outs, gt, mode='val', draw_axis=True, motion=None, elems=['gt', 'rgb', 'dep', 'opa']):
         # visual elements
@@ -398,7 +398,7 @@ class BaseSystem(pl.LightningModule, SaverMixin):
             self.save_axis(f'it{it}_axis.ply', motion)
 
             # metrics for surface quality
-            cd_s, cd_d_can, cd_w_can, cd_d_start, cd_w_start = self.metrics_surface()
+            cd_s, cd_d_start, cd_w_start = self.metrics_surface()
 
             
             # video for the testing images
@@ -413,21 +413,14 @@ class BaseSystem(pl.LightningModule, SaverMixin):
 
             metrics.update({
                 "surface": {
-                    "canonical": {
-                        'CD-w': cd_w_can,
-                        "CD-s": cd_s,
-                        "CD-d": cd_d_can,
-                    },
-                    "start": {
-                        'CD-w': cd_w_start,
-                        "CD-s": cd_s,
-                        "CD-d": cd_d_start,
-                    },
+                    "CD-w": cd_w_start,
+                    "CD-s": cd_s,
+                    "CD-d": cd_d_start,
                 }
             })
         
-        
         self.save_json(f'it{it}_{mode}_metrics.json', metrics)
+        
     """
     Implementing on_after_batch_transfer of DataModule does the same.
     But on_after_batch_transfer does not support DP.

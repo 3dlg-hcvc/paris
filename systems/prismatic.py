@@ -4,9 +4,8 @@ from os.path import join, dirname
 import systems
 from systems.base import BaseSystem
 from systems.criterions import PSNR, SSIM, binary_cross_entropy, entropy_loss 
-from systems.utils import parse_optimizer, parse_scheduler, load_gt_axis, load_gt_info_pris
-
-from visual_utils.plot_camera import plot_camera
+from systems.utils import parse_optimizer, parse_scheduler, load_gt_info
+from utils.plot_camera import plot_camera
 
 @systems.register('prismatic-system')
 class PrismaticSystem(BaseSystem):
@@ -18,8 +17,8 @@ class PrismaticSystem(BaseSystem):
         self.train_num_samples = self.config.model.train_num_rays * self.config.model.num_samples_per_ray
         self.train_num_rays = self.config.model.train_num_rays
 
-        self.gt_info = load_gt_info_pris(self.config.model.motion_gt_path)
-        self.gt_axis = load_gt_axis(self.config.model.motion_gt_path)
+        self.gt_info = load_gt_info(self.config.model.motion_gt_path)
+
 
     
     def on_train_start(self) -> None:
@@ -230,7 +229,8 @@ class PrismaticSystem(BaseSystem):
         # output motion params
         axis_o = self.model.axis_o.detach()
         axis_d = self.model.axis_d.detach()
-        dist = self.model.dist.detach()
+        dist_half = self.model.dist.detach()
+        dist = 2. * dist_half
         axis_d = F.normalize(axis_d, p=2., dim=0)
 
         motion = {

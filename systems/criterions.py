@@ -173,9 +173,14 @@ def entropy_loss(src, clip_eps=1e-6, skew=1.0):
 #     return deg
 
 def geodesic_distance(q, gt_R):
-    pred_R = R_from_quaternions(q.squeeze(0)).cpu()
-    R = torch.matmul(pred_R, gt_R.T)
-    cos_angle = torch.clip((torch.trace(R) - 1.0) * 0.5, min=-1., max=1.)
+    '''
+    q is the output from the network (rotation from t=0.5 to t=1)
+    gt_R is the GT rotation from t=0 to t=1
+    '''
+    R_half = R_from_quaternions(q.squeeze(0)).cpu()
+    R_full = torch.matmul(R_half, R_half)
+    R_diff = torch.matmul(R_full, gt_R.T)
+    cos_angle = torch.clip((torch.trace(R_diff) - 1.0) * 0.5, min=-1., max=1.)
     angle = torch.rad2deg(torch.arccos(cos_angle)) 
     return angle
 
@@ -186,13 +191,13 @@ def geodesic_distance(q, gt_R):
 #     angle = torch.rad2deg(torch.arccos(cos_angle)) 
 #     return angle
 
-def axis_metrics(motion_info, gt_axis):
+def axis_metrics(motion, gt):
     # pred axis
-    pred_axis_d = motion_info['axis_d'].cpu().squeeze(0)
-    pred_axis_o = motion_info['axis_o'].cpu().squeeze(0)
+    pred_axis_d = motion['axis_d'].cpu().squeeze(0)
+    pred_axis_o = motion['axis_o'].cpu().squeeze(0)
     # gt axis
-    gt_axis_d = gt_axis[1] - gt_axis[0]
-    gt_axis_o = gt_axis[0]
+    gt_axis_d = gt['axis_d']
+    gt_axis_o = gt['axis_o']
     # angular difference between two vectors
     cos_theta = torch.dot(pred_axis_d, gt_axis_d) / (torch.norm(pred_axis_d) * torch.norm(gt_axis_d))
     ang_err = torch.rad2deg(torch.acos(torch.abs(cos_theta)))
@@ -206,9 +211,11 @@ def axis_metrics(motion_info, gt_axis):
     return ang_err, pos_err
 
 def translational_error(motion, gt):
-    dist = motion['dist'].cpu()
-    axis_d = F.normalize(motion['axis_d'].cpu().squeeze(0), p=2, dim=0)
+    dist_half = motion['dist'].cpu()
+    dist = dist_half * 2.
     gt_dist = gt['dist']
+
+    axis_d = F.normalize(motion['axis_d'].cpu().squeeze(0), p=2, dim=0)
     gt_axis_d = F.normalize(gt['axis_d'].cpu(), p=2, dim=0)
 
     err = torch.sqrt(((dist * axis_d - gt_dist * gt_axis_d) ** 2).sum())
