@@ -42,7 +42,6 @@ class BlenderDatasetBase():
             raise NotImplementedError
         
         self.w, self.h = int(self.config.img_wh[0] * img_scale), int(self.config.img_wh[1] * img_scale)
-        self.near, self.far = self.config.near_plane, self.config.far_plane
         self.rank = _get_rank()
 
         if split == 'pred':

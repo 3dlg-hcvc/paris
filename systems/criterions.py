@@ -151,7 +151,6 @@ class SSIM():
         elif reduction == 'mean':
             return _ssim.mean()
 
-
 def binary_cross_entropy(src, target, clip_eps=1e-6):
     src = torch.clamp(src, clip_eps, 1.-clip_eps)
     return -(target * torch.log(src) + (1 - target) * torch.log(1 - src)).mean()
@@ -164,13 +163,6 @@ def entropy_loss(src, clip_eps=1e-6, skew=1.0):
     entropy = - (src * torch.log(src) + (1.-src) * torch.log(1.-src))
     return entropy.mean()
 
-# def rotation_diff_quat(p, q):
-#     p, q = p.cpu(), q.cpu()
-#     conj_q = torch.tensor([q[0], -q[1], -q[2], -q[3]]).float()
-#     cos_half_angle = torch.clip(torch.dot(p, conj_q), min=-1., max=1.)
-#     angle = 2. * torch.arccos(cos_half_angle)
-#     deg = torch.rad2deg(angle)
-#     return deg
 
 def geodesic_distance(pred_R, gt_R):
     '''
@@ -183,12 +175,6 @@ def geodesic_distance(pred_R, gt_R):
     angle = torch.rad2deg(torch.arccos(cos_angle)) 
     return angle
 
-# def geodesic_distance_R(pred_R, gt_R):
-#     pred_R, gt_R = pred_R.cpu(), gt_R.cpu()
-#     R = torch.matmul(pred_R, gt_R.T)
-#     cos_angle = torch.clip((torch.trace(R) - 1.0) * 0.5, min=-1., max=1.)
-#     angle = torch.rad2deg(torch.arccos(cos_angle)) 
-#     return angle
 
 def axis_metrics(motion, gt):
     # pred axis

@@ -357,7 +357,7 @@ def load_gt_info(path: str):
         trans_info = meta['trans_info']
         f.close()
     
-    motion_type = meta['input']['motion']['type']
+    motion_type = trans_info['type']
 
     axis_o = torch.tensor(trans_info['axis']['o']).float()
     axis_d = torch.tensor(trans_info['axis']['d']).float()
@@ -371,6 +371,7 @@ def load_gt_info(path: str):
         theta = torch.deg2rad(angle)
         R = R_from_axis_angle(axis_d, theta)
         return {
+            'type': 'rotate',
             'R': R,
             'axis_o': axis_o,
             'axis_d': axis_d,
@@ -379,6 +380,7 @@ def load_gt_info(path: str):
     elif motion_type == 'translate':
         dist = torch.tensor([(trans_info['translate']['r'] - trans_info['translate']['l'])]).float()
         return {
+            'type': 'translate',
             'dist': dist,
             'axis_o': axis_o,
             'axis_d': axis_d,

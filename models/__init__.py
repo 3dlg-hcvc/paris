@@ -13,5 +13,5 @@ def make(name, config):
     return model
 
 
-from . import prismatic, revolute, geometry, texture, d2nerf_se3
+from . import prismatic, revolute, geometry, se3, texture
 

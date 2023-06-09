@@ -16,5 +16,5 @@ def make(name, config, load_from_checkpoint=None):
         system = systems[name].load_from_checkpoint(
             load_from_checkpoint, strict=False, config=config)
     return system
-from . import revolute, prismatic
+from . import revolute, prismatic, se3
                 

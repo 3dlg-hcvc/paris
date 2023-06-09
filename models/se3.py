@@ -7,27 +7,22 @@ from models.utils import chunk_batch
 from systems.utils import update_module_step
 from nerfacc import ContractionType, OccupancyGrid, ray_marching
 from nerfacc.vol_rendering import render_transmittance_from_alpha, rendering
-from torch_efficient_distloss import flatten_eff_distloss
-from models.utils import scale_anything
-import torch.nn.functional as F
+from utils.rotation import R_from_quaternions
 
-
-@models.register('prismatic')
-class PrismaticModel(BaseModel):
+@models.register('se3')
+class SE3Model(BaseModel):
     def setup(self):
         self.static_geometry = models.make(self.config.geometry.name, self.config.geometry)
         self.static_texture = models.make(self.config.texture.name, self.config.texture)
         self.dynamic_geometry = models.make(self.config.geometry.name, self.config.geometry)
         self.dynamic_texture = models.make(self.config.texture.name, self.config.texture)
 
-        init_dist = self.config.get('init_dist', 0.1)
-        self.load_gt_pivot(self.config['motion_gt_path'])
-        self.axis_d = nn.Parameter(torch.tensor([1e-6, 1e-6, 1e-6], dtype=torch.float32), requires_grad=True)
-        self.dist = nn.Parameter(torch.tensor([init_dist], dtype=torch.float32), requires_grad=True)
-        self.canonical = 0.5
-        self.use_part_mask = self.config.get('use_part_mask', False)
+        init_angle = self.config.get('init_angle', 0.1)
+        init_dir = self.config.get('init_dir', [1., 1., 1.])
+        self.quaternions = nn.Parameter(self.init_quaternions(half_angle=init_angle, init_dir=init_dir), requires_grad=True) # real part first
+        self.translation = nn.Parameter(torch.tensor([0.001, 0.001, 0.001], dtype=torch.float32), requires_grad=True) # edit: temp ignore
+        self.canonical = 0.5 # the canonical state ranging in [0, 1]
 
-        self.render_step_size = 1.732 * 2 * self.config.radius / self.config.num_samples_per_ray
         self.register_buffer('scene_aabb', torch.as_tensor([-self.config.radius, -self.config.radius, -self.config.radius, self.config.radius, self.config.radius, self.config.radius], dtype=torch.float32))
         if self.config.grid_prune:
             self.grid_warmup = self.config['grid_warmup']
@@ -42,6 +37,63 @@ class PrismaticModel(BaseModel):
             self.register_buffer('background_color', torch.as_tensor([1.0, 1.0, 1.0], dtype=torch.float32), persistent=False)
             self.background_color.to(self.rank)
 
+        self.render_step_size = 1.732 * 2 * self.config.radius / self.config.num_samples_per_ray
+    
+
+    def update_step(self, epoch, global_step):
+        update_module_step(self.static_texture, epoch, global_step)
+        update_module_step(self.dynamic_texture, epoch, global_step)
+        
+        def occ_eval_fn(x):
+            density_s, _ = self.static_geometry(x)
+            x_d = self.rigid_transform(x)
+            density_d, _ = self.dynamic_geometry(x_d)
+            density = density_s + density_d
+            return density[...,None] * self.render_step_size
+        
+        if self.training and self.config.grid_prune:
+            self.occupancy_grid.every_n_step(step=global_step, occ_eval_fn=occ_eval_fn, occ_thre=1e-4, warmup_steps=self.grid_warmup)
+
+   
+    def isosurface(self):
+        mesh_s = self.static_geometry.isosurface()
+        mesh_d = self.dynamic_geometry.isosurface()
+        return {'static': mesh_s, 'dynamic': mesh_d}
+    
+    def init_quaternions(self, half_angle, init_dir):
+        a = torch.tensor([init_dir[0], init_dir[1], init_dir[2]], dtype=torch.float32)
+        # a = torch.tensor([1., 1., 1.], dtype=torch.float32)
+        a = torch.nn.functional.normalize(a, p=2., dim=0)
+        sin_ = sin(half_angle)
+        cos_ = cos(half_angle)
+        r = cos_
+        i = a[0] * sin_
+        j = a[1] * sin_
+        k = a[2] * sin_
+        q = torch.tensor([r, i, j, k], dtype=torch.float32)
+        return q
+    
+    def rigid_transform(self, positions, state=0.):
+        '''
+        Perform the rigid transformation: R_axis_d,rot_angle(center=axis_o) @ x + t
+        '''
+        
+        scaling = (self.canonical - state) / self.canonical
+
+        if scaling == 1.:
+            R = R_from_quaternions(self.quaternions)
+            positions = torch.matmul(R, positions.T).T
+            positions = positions + self.translation
+        elif scaling == -1.:
+            positions = positions - self.translation
+            inv_sc = torch.tensor([1., -1., -1., -1]).to(self.quaternions)
+            inv_q = inv_sc * self.quaternions
+            R = R_from_quaternions(inv_q)
+            positions = torch.matmul(R, positions.T).T
+        else:
+            raise NotImplementedError
+        return positions
+    
     
     def forward_(self, rays, scene_state):
         rays_o, rays_d = rays[:, 0:3], rays[:, 3:6] # both (N_rays, 3)
@@ -77,10 +129,8 @@ class PrismaticModel(BaseModel):
             rgb = self.dynamic_texture(feature, dirs_d)
             return rgb, density[...,None]
 
-        
         def composite_rendering(ray_indices, t_starts, t_ends):
             n_rays = rays_o.shape[0]
-
             rgb_s, sigma_s = rgb_sigma_fn_static(t_starts, t_ends, ray_indices)
             rgb_d, sigma_d = rgb_sigma_fn_dynamic(t_starts, t_ends, ray_indices)
 
@@ -90,10 +140,10 @@ class PrismaticModel(BaseModel):
 
             alpha_add = 1. - (1. - alpha_s) * (1. - alpha_d)
             Ts = render_transmittance_from_alpha(alpha_add, ray_indices=ray_indices)
-            
+
             weights_s = alpha_s * Ts
             weights_d = alpha_d * Ts
-
+            
             weights = weights_s + weights_d
             # opacity
             opacity = self.acc_along_rays(weights, ray_indices, n_rays)
@@ -103,17 +153,8 @@ class PrismaticModel(BaseModel):
             rgb = self.acc_along_rays(rgb, ray_indices, n_rays)
             # Background composition.
             if self.config.white_bkgd:
-                rgb = rgb + self.background_color * (1. - opacity[..., None])
-            # regularization
-            ratio = sigma_d / torch.clamp_min(sigma_s + sigma_d, 1e-10)
-            # regularization on part mask
-            part_mask_ratio = None
-            if self.use_part_mask:
-                opacity_s = self.acc_along_rays(weights_s, ray_indices, n_rays)
-                opacity_d = self.acc_along_rays(weights_d, ray_indices, n_rays)
-                part_mask_ratio = opacity_s / torch.clamp_min(opacity_s + opacity_d, 1e-10)
-
-
+                rgb = rgb + self.background_color * (1. - opacity[..., None])  
+            
             # validation and testing
             if not self.training:
                 # depth
@@ -139,12 +180,12 @@ class PrismaticModel(BaseModel):
                     'opacity_d': opacity_d, 
                 }
             
+            
+
             return {
                 'rgb': rgb, 
-                'ratio': ratio.squeeze(-1), 
                 'rays_valid': opacity > 0, 
                 'opacity': opacity,
-                'part_mask_ratio': part_mask_ratio,
             }
 
         with torch.no_grad():
@@ -159,14 +200,13 @@ class PrismaticModel(BaseModel):
             )
         render_out = composite_rendering(ray_indices, t_starts, t_ends)
 
+        # render_out = composite_rendering(packed_info, t_starts, t_ends)
         if self.training:
             return {
                 'comp_rgb': render_out['rgb'],
-                'ratio': render_out['ratio'],
                 'opacity': render_out['opacity'],
                 'rays_valid': render_out['rays_valid'],
                 'num_samples': torch.as_tensor([len(t_starts)], dtype=torch.int32, device=rays.device),
-                'part_mask_ratio': render_out['part_mask_ratio'],
             }
 
         return {
@@ -200,51 +240,6 @@ class PrismaticModel(BaseModel):
         self.randomized = False
         return super().eval()
     
-    def load_gt_pivot(self, path):
-        import json
-        import numpy as np
-        with open(path, mode='r') as f:
-            meta = json.load(f)
-            trans_info = meta['trans_info']
-            f.close()
-        axis_o = np.array(trans_info['axis']['o']).astype(np.float32)
-        frame_R_sapien = torch.tensor([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
-        axis_o = torch.matmul(frame_R_sapien, torch.tensor(axis_o))
-        self.register_buffer('axis_o', axis_o, persistent=True)
-
-   
-    
-    def rigid_transform(self, positions, state=0.):
-        '''
-        translate the dynamic part from t*=0.5 to t=0 or 1
-        '''
-
-        scaling = (self.canonical - state) / self.canonical
-        unit_d = F.normalize(self.axis_d, p=2, dim=0)
-        positions = positions + unit_d * scaling * self.dist
-        return positions
-    
     def regularizations(self, outs):
         losses = {}
         return losses
-    
-    def update_step(self, epoch, global_step):
-        '''The function is not used'''
-        # progressive viewdir PE frequencies
-        update_module_step(self.static_texture, epoch, global_step)
-        update_module_step(self.dynamic_texture, epoch, global_step)
-        
-        def occ_eval_fn(x):
-            density_s, _ = self.static_geometry(x)
-            x_d = self.rigid_transform(x)
-            density_d, _ = self.dynamic_geometry(x_d)
-            density = density_s + density_d
-            return density[...,None] * self.render_step_size
-        
-        if self.training and self.config.grid_prune:
-            self.occupancy_grid.every_n_step(step=global_step, occ_eval_fn=occ_eval_fn, occ_thre=1e-4, warmup_steps=self.grid_warmup)
-
-    def isosurface(self):
-        mesh_s = self.static_geometry.isosurface()
-        mesh_d = self.dynamic_geometry.isosurface()
-        return {'static': mesh_s, 'dynamic': mesh_d}

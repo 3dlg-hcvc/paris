@@ -1,5 +1,5 @@
-name: paris
-tag: 'debug'
+name: prismatic
+tag: '01'
 seed: 42
 source: sapien/storage/45135
 exp_dir: ./exp/${source}/${name}
@@ -16,8 +16,7 @@ dataset:
   val_scale: 0.1
   test_scale: 1.0
   pred_scale: 1.0
-  near_plane: 2.0
-  far_plane: 6.0
+
   white_bkgd: true
   spheric_poses: false
   use_pixel_centers: true

@@ -2,13 +2,12 @@ import torch
 import pytorch_lightning as pl
 import models
 from models.ray_utils import get_rays
-from systems.utils import parse_optimizer, parse_scheduler, update_module_step, proj2img
+from systems.utils import parse_optimizer, parse_scheduler, update_module_step, proj2img, load_gt_info
 from utils.mixins import SaverMixin
 from utils.misc import config_to_primitive
 from systems.criterions import PSNR, SSIM, geodesic_distance, axis_metrics, translational_error
 from os.path import join, dirname
 from utils.chamfer import eval_CD
-
 
 class BaseSystem(pl.LightningModule, SaverMixin):
     """
@@ -23,7 +22,10 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         self.prepare()
     
     def prepare(self):
-        pass
+        self.train_num_samples = self.config.model.train_num_rays * self.config.model.num_samples_per_ray
+        self.train_num_rays = self.config.model.train_num_rays
+        self.gt_info = load_gt_info(self.config.model.motion_gt_path)
+
 
     def configure_optimizers(self):
         model_optim = parse_optimizer(self.config.system.model_optimizer, self.model)
@@ -220,7 +222,7 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         self.save_json(f'it{it}_{mode}_motion.json', motion_json)
 
     def metrics_motion(self, motion, mode='val'):
-        motion_type = motion['type']
+        motion_type = self.gt_info['type']
         if motion_type == 'rotate':
             # rotation difference
             geo_dist = geodesic_distance(motion['R'].squeeze_(0), self.gt_info['R'])
@@ -261,15 +263,6 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         # configurations
         res = self.config.model.geometry.isosurface.resolution
         thre = float(self.config.model.geometry.isosurface.threshold)
-        # # Chamfer-L1 Distance at canonical state
-        # cd_s, cd_d_can, cd_w_can = eval_CD(
-        #     self.get_save_path(f"it{it}_static_{res}_thre{thre}.ply"),
-        #     self.get_save_path(f"it{it}_dynamic_{res}_thre{thre}.ply"),
-        #     self.get_save_path(f"it{it}_whole_{res}_thre{thre}.ply"),
-        #     join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_static_rotate.ply'),
-        #     join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_dynamic_rotate.ply'),
-        #     join(dirname(self.config.model.motion_gt_path), 'canonical', 'canonical_rotate.ply')
-        # )
 
         # Chamfer-L1 Distance at start state
         cd_s, cd_d_start, cd_w_start = eval_CD(

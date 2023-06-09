@@ -3,25 +3,13 @@ import torch.nn.functional as F
 import systems
 from systems.base import BaseSystem
 from systems.criterions import binary_cross_entropy, entropy_loss
-
-from systems.utils import load_gt_info
 from utils.rotation import quaternion_to_axis_angle, R_from_axis_angle
-from utils.plot_camera import plot_camera
 
 
 @systems.register('revolute-system')
 class RevoluteSystem(BaseSystem):
-    def prepare(self):
-        self.train_num_samples = self.config.model.train_num_rays * self.config.model.num_samples_per_ray
-        self.train_num_rays = self.config.model.train_num_rays
-
-        self.gt_info = load_gt_info(self.config.model.motion_gt_path)
-
-
     def on_train_start(self) -> None:
         self.dataset = self.trainer.datamodule.train_dataloader().dataset
-        plot_camera(self.dataset.vis_cam_0, self.get_save_path('camera/cam_start.ply'), color=[1, 0, 0])
-        plot_camera(self.dataset.vis_cam_1, self.get_save_path('camera/cam_end.ply'), color=[1, 0, 0])
         return super().on_train_start()
     
     def on_validation_start(self) -> None:
@@ -39,7 +27,6 @@ class RevoluteSystem(BaseSystem):
     def forward(self, batch):
         return self.model(batch['rays_0'], batch['rays_1'])
     
-
     def training_step(self, batch, batch_idx, optimizer_idx):
         outs = self.model(batch['rays_0'], batch['rays_1'])
         loss = 0.

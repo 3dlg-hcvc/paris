@@ -4,8 +4,7 @@ import time
 import logging
 from datetime import datetime
 
-
-def main():
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='configs/d2nerf.yaml', help='path to config file')
     parser.add_argument('--gpu', default='0', help='GPU(s) to be used')
@@ -18,7 +17,6 @@ def main():
     parser.add_argument('--mesh_only', action='store_true', help='when test mode, switch on to extract mesh only without generate test images')
     parser.add_argument('--verbose', action='store_true', help='if true, set logging level to DEBUG')
 
-
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--train', action='store_true')
     group.add_argument('--validate', action='store_true')
@@ -28,18 +26,9 @@ def main():
     args, extras = parser.parse_known_args()
 
     # set CUDA_VISIBLE_DEVICES then import pytorch-lightning
-    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    # os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu # solar config
-    # thread control, might not working
-    os.environ['OMP_NUM_THREADS'] = '16'
-    os.environ['OPENBLAS_NUM_THREADS'] = '16'
-    os.environ['MKL_NUM_THREADS'] = '16'
-    os.environ['VECLIB_MAXIMUM_THREADS'] = '16'
-    os.environ['NUMEXPR_NUM_THREADS'] = '16'
     n_gpus = len(args.gpu.split(','))
 
     # os.environ['TORCH_DISTRIBUTED_DEBUG'] = 'INFO'
-
     import datasets
     import systems
     import torch
@@ -51,9 +40,6 @@ def main():
     from utils.misc import load_config    
     from pytorch_lightning.strategies.ddp import DDPStrategy
     from models.utils import cleanup
-
-    # free cache and temporary memory of tcnn
-    cleanup()
 
     # parse YAML config to OmegaConf
     config = load_config(args.config, cli_args=extras)
@@ -67,11 +53,8 @@ def main():
     config.code_dir = config.get('code_dir') or os.path.join(config.exp_dir, config.trial_name, 'code')
     config.config_dir = config.get('config_dir') or os.path.join(config.exp_dir, config.trial_name, 'config')
 
-    if args.test:
-        if args.mesh_only:
-            config.mesh_only = True
-        else:
-            config.mesh_only = False
+    if args.test and args.mesh_only:
+        config.mesh_only = True
     else:
         config.mesh_only = False
 
@@ -116,11 +99,10 @@ def main():
     trainer = Trainer(
         devices=n_gpus,
         accelerator='gpu',
-        # auto_select_gpus=True,
+        auto_select_gpus=True,
         callbacks=callbacks,
         logger=loggers,
         strategy=DDPStrategy(find_unused_parameters=True),
-        # strategy='dp',
         **config.trainer
     )
 
@@ -139,7 +121,3 @@ def main():
     
     # free cache and temporary memory of tcnn
     cleanup()
-
-
-if __name__ == '__main__':
-    main()

@@ -9,21 +9,9 @@ from utils.plot_camera import plot_camera
 
 @systems.register('prismatic-system')
 class PrismaticSystem(BaseSystem):
-    def prepare(self):
-        self.criterions = {
-            'psnr': PSNR(),
-            'ssim': SSIM()
-        }
-        self.train_num_samples = self.config.model.train_num_rays * self.config.model.num_samples_per_ray
-        self.train_num_rays = self.config.model.train_num_rays
-
-        self.gt_info = load_gt_info(self.config.model.motion_gt_path)
-
 
     def on_train_start(self) -> None:
         self.dataset = self.trainer.datamodule.train_dataloader().dataset
-        plot_camera(self.dataset.vis_cam_0, self.get_save_path('camera/cam_start.ply'), color=[1, 0, 0])
-        plot_camera(self.dataset.vis_cam_1, self.get_save_path('camera/cam_end.ply'), color=[1, 0, 0])
         return super().on_train_start()
     
     def on_validation_start(self) -> None:
@@ -40,13 +28,7 @@ class PrismaticSystem(BaseSystem):
 
     def forward(self, batch):
         return self.model(batch['rays_0'], batch['rays_1']) 
-    
-    def configure_optimizers(self):
-        model_optim = parse_optimizer(self.config.system.model_optimizer, self.model)
-        motion_optim = parse_optimizer(self.config.system.motion_optimizer, self.model)
-        model_scheduler = parse_scheduler(self.config.system.model_scheduler, model_optim)
-        motion_scheduler = parse_scheduler(self.config.system.motion_scheduler, motion_optim)
-        return [model_optim, motion_optim], [model_scheduler, motion_scheduler]
+
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         outs = self.model(batch['rays_0'], batch['rays_1'])

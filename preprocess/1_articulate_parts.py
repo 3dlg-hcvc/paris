@@ -81,8 +81,6 @@ def get_arti_info(entry, motion):
     # slider joint
     elif entry['joint'] == 'slider':
         assert motion['type'] == 'translate'
-        # to make sure this is not a R slider type
-        assert 'rotates' not in entry['jointData']['limit'].keys()
         T_limit_l, T_limit_r = motion['translate'][0], motion['translate'][1]
         res.update({
                 'translate': {
@@ -140,7 +138,7 @@ def generate_state(motions, src_root, exp_dir, state):
     ms = pymeshlab.MeshSet()
     ms_static = pymeshlab.MeshSet()
     ms_dynamic = pymeshlab.MeshSet()
-    
+
     # 1. Load parts needs transformation to the mesh set
     for entry in meta:
         # add all moving parts into the meshset
@@ -238,6 +236,7 @@ def record_motion_json(motions, arti_info, dst_root):
     axis_d = np.matmul(R_coord, axis_d).tolist()
     arti_info['axis']['o'] = axis_o
     arti_info['axis']['d'] = axis_d
+    arti_info['type'] = motions['motion']['type']
 
     with open(os.path.join(dst_root, f'trans.json'), 'w') as f:
         conf = {
@@ -247,7 +246,7 @@ def record_motion_json(motions, arti_info, dst_root):
         json.dump(conf, f)
         f.close()
 
-
+    return arti_info
 
 
 if __name__ == '__main__':
@@ -256,26 +255,26 @@ if __name__ == '__main__':
     The articulation is referred to PartNet-Mobility <mobility_v2_self.json> which is created from step 0
     '''
     # specify the object category
-    category = 'oven'
+    category = 'storage'
     # specify the model id to be loaded
-    model_id = '101917'     
+    model_id = '45135'     
     # specify the export identifier
-    model_id_exp = '101917'
+    model_id_exp = '45135'
     # specify the motion to generate new states
     motions = {
         'joint_id': 0, # joint id to be transformed (need to look up mobility_v2_self.json)
         'motion': {
-            # type of motion expected
-            'type': 'rotate',   
+            # type of motion expected: "rotate or translate"
+            'type': 'translate',   
             # range of the motion from start to end states
-            'rotate': [65., 35.0], 
-            'translate': [0., 0.],
+            'rotate': [0., 0.], 
+            'translate': [0.3, 0.6],
         },
     }
     # states to be generated
     states = ['start', 'end']
     # paths
-    src_root = os.path.join(ROOT_DIR, 'data/PartNet-Mobility', model_id)
+    src_root = os.path.join(ROOT_DIR, '../AN3/data/PartNet-Mobility', model_id)
     dst_root =  os.path.join(ROOT_DIR, f'data/sapien/{category}', model_id_exp, 'textured_objs')
 
     # load articulations (y-up frame)
