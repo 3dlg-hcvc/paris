@@ -38,21 +38,3 @@ def save_axis_mesh(k, center, filepath):
     axis.rotate(R_arrow, center=(0, 0, 0))
     axis.translate(center[:3])
     o3d.io.write_triangle_mesh(filepath, axis)
-
-def parse_json(meta):
-    # translation = np.array(meta['translation'], dtype=np.float32)
-    # center = np.array(meta['axis_o'], dtype=np.float32) - translation
-    center = np.array(meta['axis_o'], dtype=np.float32)
-    k = np.array(meta['axis_d'], dtype=np.float32)
-    k = k / np.linalg.norm(k)
-
-    return k, center
-
-if __name__ == '__main__':
-    exp_dir = '/localhome/jla861/Documents/SFU/Research/Articulated-NeRF/AN3/test_exp/sapien/stapler/103111/d2nerf/gttest-woratio-womax-wodistort@20221213-095152/save/it20000-test'
-    json_path = f'{exp_dir}/transform.json'
-    with open(json_path, 'r') as f:
-        meta = json.load(f)
-        f.close()
-    k, center = parse_json(meta)
-    save_axis_mesh(k, center, os.path.join(exp_dir, 'axis.ply'))

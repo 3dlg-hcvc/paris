@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 
 def R_from_axis_angle(k: torch.tensor, theta: torch.tensor):
+    if torch.norm(k) == 0.:
+        return torch.eye(3)
     k = F.normalize(k, p=2., dim=0)
     kx, ky, kz = k[0], k[1], k[2]
     cos, sin = torch.cos(theta), torch.sin(theta)
