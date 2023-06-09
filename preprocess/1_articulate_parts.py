@@ -6,6 +6,7 @@ import sys
 import open3d as o3d
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIR)
+from utils.axis import save_axis_mesh
 
 
 def normalize(v):
@@ -106,30 +107,11 @@ def load_articulation(src_root, joint_id):
 
     return arti_info, meta
 
-def save_axis_mesh(arti, exp_dir):
+def export_axis_mesh(arti, exp_dir):
     center = np.array(arti['axis']['o'], dtype=np.float32)
     k = np.array(arti['axis']['d'], dtype=np.float32)
-    axis = o3d.geometry.TriangleMesh.create_arrow(cylinder_radius=0.02, cone_radius=0.04, cylinder_height=1.0, cone_height=0.08)
-    arrow = np.array([0., 0., 1.], dtype=np.float32)
-    if (k == arrow).sum() < 3:
-        n = np.cross(arrow, k) 
-        rad = np.arccos(np.dot(arrow, k))
-        R_arrow = get_rotation_axis_angle(n, rad)
-        axis.rotate(R_arrow, center=(0, 0, 0))
-    axis.translate(center[:3])
-    o3d.io.write_triangle_mesh(os.path.join(exp_dir, 'axis_rotate.ply'), axis)
-
-    axis_oppo = o3d.geometry.TriangleMesh.create_arrow(cylinder_radius=0.02, cone_radius=0.04, cylinder_height=1.0, cone_height=0.08)
-    if (k == arrow).sum() < 3:
-        n_oppo = np.cross(arrow, -k) 
-        rad_oppo = np.arccos(np.dot(arrow, -k))
-        R_arrow_oppo = get_rotation_axis_angle(n_oppo, rad_oppo)
-        axis_oppo.rotate(R_arrow_oppo, center=(0, 0, 0))
-    else:
-        R_arrow_oppo = get_rotation_axis_angle(np.array([0., 1., 0.], dtype=np.float32), np.pi)
-        axis_oppo.rotate(R_arrow_oppo, center=(0, 0, 0))
-    axis_oppo.translate(center[:3])
-    o3d.io.write_triangle_mesh(os.path.join(exp_dir, 'axis_rotate_oppo.ply'), axis_oppo)
+    save_axis_mesh(k, center, os.path.join(exp_dir, 'axis_rotate.ply'))
+    save_axis_mesh(-k, center, os.path.join(exp_dir, 'axis_rotate_oppo.ply'))
 
 def generate_state(motions, src_root, exp_dir, state):
     joint_id = motions['joint_id']
@@ -255,26 +237,26 @@ if __name__ == '__main__':
     The articulation is referred to PartNet-Mobility <mobility_v2_self.json> which is created from step 0
     '''
     # specify the object category
-    category = 'storage'
+    category = 'USB'
     # specify the model id to be loaded
-    model_id = '45135'     
+    model_id = '100109'     
     # specify the export identifier
-    model_id_exp = '45135'
+    model_id_exp = '100109'
     # specify the motion to generate new states
     motions = {
         'joint_id': 0, # joint id to be transformed (need to look up mobility_v2_self.json)
         'motion': {
             # type of motion expected: "rotate or translate"
-            'type': 'translate',   
+            'type': 'rotate',   
             # range of the motion from start to end states
-            'rotate': [0., 0.], 
-            'translate': [0.3, 0.6],
+            'rotate': [0., -45.], 
+            'translate': [0., 0.],
         },
     }
     # states to be generated
     states = ['start', 'end']
     # paths
-    src_root = os.path.join(ROOT_DIR, '../AN3/data/PartNet-Mobility', model_id)
+    src_root = os.path.join(ROOT_DIR, 'data/PartNet-Mobility', model_id)
     dst_root =  os.path.join(ROOT_DIR, f'data/sapien/{category}', model_id_exp, 'textured_objs')
 
     # load articulations (y-up frame)
@@ -290,4 +272,4 @@ if __name__ == '__main__':
     arti = record_motion_json(motions, arti_info, dst_root)
 
     # save mesh for motion axis
-    save_axis_mesh(arti, dst_root)
+    export_axis_mesh(arti, dst_root)
