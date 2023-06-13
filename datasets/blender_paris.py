@@ -1,6 +1,4 @@
-import os, sys
-# ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# sys.path.append(ROOT_DIR)
+import os
 import json
 import numpy as np
 from PIL import Image
@@ -16,8 +14,6 @@ import datasets
 from models.ray_utils import get_ray_directions
 from utils.axis import get_rotation_axis_angle
 from pytorch3d.ops import sample_farthest_points
-
-import open3d as o3d
 
 
 class BlenderDatasetBase():

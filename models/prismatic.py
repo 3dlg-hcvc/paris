@@ -1,14 +1,11 @@
 import torch
 import torch.nn as nn
-from math import sin, cos
 import models
 from models.base import BaseModel
 from models.utils import chunk_batch
 from systems.utils import update_module_step
 from nerfacc import ContractionType, OccupancyGrid, ray_marching
 from nerfacc.vol_rendering import render_transmittance_from_alpha, rendering
-from torch_efficient_distloss import flatten_eff_distloss
-from models.utils import scale_anything
 import torch.nn.functional as F
 
 

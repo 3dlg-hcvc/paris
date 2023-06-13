@@ -3,11 +3,9 @@ tag: '01'
 seed: 42
 source: sapien/storage/45135
 exp_dir: ./exp/${source}/${name}
-runs_dir: ./runs/${source}/${name}
 
 dataset:
   name: blender_paris
-  scene: 103111
   root_dir: ./load/${source}/
   img_wh:
     - 800
@@ -23,11 +21,9 @@ dataset:
   white_bkgd: true
   spheric_poses: false
   use_pixel_centers: true
-
   view_downsample: true
   n_downsample: 64
   random_downsample: false # if false, using farthest point sample
-  
   view_idx: '0003' # the view for prediction (from test set)
   max_state: 1 # the maximum state to be interpolated to from state 0
   n_interp: 3 # the number of intermediate states during interpolation
@@ -86,7 +82,6 @@ model:
       output_activation: Sigmoid
       n_neurons: 64
       n_hidden_layers: 2
-  
 system:
   name: prismatic-system
   loss:
