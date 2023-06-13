@@ -16,30 +16,26 @@ dataset:
   val_scale: 0.1
   test_scale: 1.0
   pred_scale: 1.0
-
-  white_bkgd: true
-  spheric_poses: false
-  use_pixel_centers: true
-  view_downsample: false
-  n_downsample: 32
   train_split: 'train'
   val_split: 'val'
   test_split: 'test'
   pred_split: 'pred'
-  view_idx: '0003' # the view for prediction
-  # perturb_cam: false # if we want to perturb the camera
-  # misalign: false
-  # std_angle: 5     # the std of the perturb angle in degrees
-  # std_dist: 0.01     # the std of the translational error
+  white_bkgd: true
+  spheric_poses: false
+  use_pixel_centers: true
+
+  view_downsample: true
+  n_downsample: 64
+  random_downsample: false # if false, using farthest point sample
+  
+  view_idx: '0003' # the view for prediction (from test set)
+  max_state: 1 # the maximum state to be interpolated to from state 0
+  n_interp: 3 # the number of intermediate states during interpolation
 
 model:
   name: prismatic
   radius: 1.5
   init_angle: 0.1
-  # motion_gt: false
-  # motion_init_gt: false
-  # field_init_gt: false
-  # ignore_translate: true
   motion_gt_path: ./data/${source}/textured_objs/trans.json
   render_step_size: 5.e-3
   num_samples_per_ray: 1024
@@ -53,16 +49,6 @@ model:
   ray_chunk: 4096
   white_bkgd: true
   use_part_mask: true
-  # use_maximum: false
-  # use_distortion: false
-  # use_swi: false
-  # use_intersect: false
-  # ray_marching:
-  #   alpha_thre: 0.
-  #   early_stop_eps: 0.
-  # comp_rendering:
-  #   alpha_thre: 0.
-  #   early_stop_eps: 0.
   geometry:
     name: volume-density
     radius: ${model.radius}
@@ -106,17 +92,9 @@ system:
   loss:
     lambda_rgb: 1.
     lambda_blend_ratio: 0.000
-    skew_blend_ratio: 1.0 # skewness of the BCE
     lambda_part_mask: 0.000
-    # skew_part_mask: 1.0   # skewness of the BCE
     reg_from_iter: 10000
     lambda_mask: 0.1
-    # lambda_swipe_ratio: 0.0
-    # lambda_distortion: 0. # deprecated
-    # lambda_weights: 0.000 # deprecated
-    # lambda_min_alpha: 0.0 # deprecated
-    # lambda_opaque: 0. # deprecated
-    # lambda_inter_ratio: 0.0 # deprecated
   model_optimizer:
     name: Adam
     args:
@@ -148,7 +126,6 @@ system:
     interval: step
     args:
       milestones: [10000, 15000, 18000, 20000, 25000]
-      # milestones: [20000]
       gamma: 0.5
   motion_scheduler:
     name: MultiStepLR

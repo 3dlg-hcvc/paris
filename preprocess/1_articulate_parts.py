@@ -57,9 +57,17 @@ def z_up_frame_meshsets(mss: list):
 def save_meshsets_ply(mss: list, fnames: list):
     for ms, fname in zip(mss, fnames):
         ms.save_current_mesh(fname,
+                             save_vertex_quality=False,
+                             save_vertex_radius=False,
                              save_vertex_color=False,
                              save_face_color=False,
-                             save_wedge_texcoord=False)
+                             save_face_quality=False,
+                             save_wedge_color=False,
+                             save_wedge_texcoord=False,
+                             save_wedge_normal=False)
+        # resave with open3d, because there is incompatibility of pymesh with load_ply in pytorch3d for later evaluation
+        mesh = o3d.io.read_triangle_mesh(fname)
+        o3d.io.write_triangle_mesh(fname, mesh, write_triangle_uvs=False)
 
 def get_arti_info(entry, motion):
     res = {
@@ -237,11 +245,11 @@ if __name__ == '__main__':
     The articulation is referred to PartNet-Mobility <mobility_v2_self.json> which is created from step 0
     '''
     # specify the object category
-    category = 'USB'
+    category = 'fridge'
     # specify the model id to be loaded
-    model_id = '100109'     
+    model_id = '10905'     
     # specify the export identifier
-    model_id_exp = '100109'
+    model_id_exp = '10905'
     # specify the motion to generate new states
     motions = {
         'joint_id': 0, # joint id to be transformed (need to look up mobility_v2_self.json)
@@ -249,7 +257,7 @@ if __name__ == '__main__':
             # type of motion expected: "rotate or translate"
             'type': 'rotate',   
             # range of the motion from start to end states
-            'rotate': [0., -45.], 
+            'rotate': [0., -60.], 
             'translate': [0., 0.],
         },
     }

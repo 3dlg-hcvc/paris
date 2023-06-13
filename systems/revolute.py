@@ -118,77 +118,42 @@ class RevoluteSystem(BaseSystem):
             self.save_metrics(out, mode='test')       
         del out   
 
-    # def predict_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
-    #     from models.utils import chunk_batch
-    #     n_interpolate = 4 # render n_interpolate+1 imgs in total
-    #     max_state= 1
-    #     interval = max_state / n_interpolate
-    #     self.model.eval()
-    #     imgs, depths = [], []
-    #     i = 0
-    #     W, H = self.dataset.w, self.dataset.h
-    #     while i < max_state or i == max_state:
-    #         out = chunk_batch(self.model.forward_, self.config.model.ray_chunk, batch['rays'], scene_state=i)
-    #         img = out['comp_rgb'].view(H, W, 3)
-    #         # dep = out['depth'].view(H, W)
-    #         imgs.append(img)
-    #         # depths.append(dep)
-    #         print('finish state ', i)
-    #         i += interval
-    #     #     del out
-    #     img_grid = [{'type': 'rgb', 'img': batch['rgb_0'].view(H, W, 3), 'kwargs': {'data_format': 'HWC'}}]
-    #     # # img_grid = [{'type': 'rgb', 'img': imgs[0], 'kwargs': {'data_format': 'HWC'}}] # the stapler start test view has problem, this is a temp thing for stapler
-
-    #     img_grid += [{'type': 'rgb', 'img': img, 'kwargs': {'data_format': 'HWC'}} for img in imgs]
-    #     img_grid.append({'type': 'rgb', 'img': batch['rgb_1'].view(H, W, 3), 'kwargs': {'data_format': 'HWC'}})
-    #     # img_grid = [{'type': 'rgb', 'img': img, 'kwargs': {'data_format': 'HWC'}} for img in imgs]
-
-    #     source = self.config.source
-    #     tokens = source.split('/')
-        # self.save_image_grid(f"it{self.global_step}-pred/{tokens[1]}_{self.config.dataset.view_idx}_RGB_{n_interpolate+1}states.png", img_grid)
-    #     self.save_image_grid(f"it{self.global_step}-pred/{self.config.dataset.view_idx}_RGB.png", img_grid)
-    #     # self.save_image_grid(f"it{self.global_step}-pred/{self.config.dataset.view_idx}_depth.png", \
-    #     #     [{'type': 'grayscale', 'img': dep, 'kwargs': {}} for dep in depths])
-
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
-        import cv2
-        import numpy as np
-        from models.utils import chunk_batch
-        n_interpolate = 20 # render n_interpolate+1 imgs in total
-        max_state= 1
-        interval = max_state / n_interpolate
         self.model.eval()
-        imgs, img_paths = [], []
-        i = 0
+        from models.utils import chunk_batch
+        pred_mode = self.config.dataset.get('pred_mode', 'grid')
+        n_interp = self.config.dataset.get('n_interp', 3)
+        max_state= self.config.dataset.get('max_state',1)
+        interval = max_state / (n_interp + 1)
         W, H = self.dataset.w, self.dataset.h
-        while i < (max_state+interval):
-            out = chunk_batch(self.model.forward_, self.config.model.ray_chunk, batch['rays'], scene_state=i)
-            img = (out['comp_rgb'].view(H, W, 3).clip(0, 1) * 255).cpu().numpy().astype(np.uint8)
-            img_path = self.get_save_path(f"it{self.global_step}-anim/{self.config.dataset.view_idx}_state{i}.png")
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-            cv2.imwrite(img_path, img)
-            imgs.append(img)
-            img_paths.append(img_path)
-            # depths.append(dep)
-            print('finish state ', i)
-            i += interval
-        # video
-        name = self.config.source.split('/')
-        imgss = [cv2.imread(f) for f in img_paths]
-        exp_path = self.get_save_path(f"it{self.global_step}-anim/{name}.mp4")
-        H, W, _ = imgss[0].shape
-        writer = cv2.VideoWriter(exp_path, cv2.VideoWriter_fourcc(*'mp4v'), 10, (W, H), True)
-        for img in imgss:
-            writer.write(img)
-        
-        n = len(imgss)
-        i = n - 1
-        while i > 0 or i == 0:
-            img = imgss[i]
-            writer.write(img)
-            i -= 1
-        
-        writer.release()
+        i = 0
+        if pred_mode == 'grid': # concat the image grid from state 0 to state max_state
+            imgs = []
+            while i < (max_state+interval):
+                out = chunk_batch(self.model.forward_, self.config.model.ray_chunk, batch['rays'], scene_state=i)
+                img = out['comp_rgb'].view(H, W, 3)
+                imgs.append(img)
+                print('finish state ', i)
+                i += interval
+            # image grid
+            img_grid = [{'type': 'rgb', 'img': batch['rgb_0'].view(H, W, 3), 'kwargs': {'data_format': 'HWC'}}] # start with GT
+            img_grid += [{'type': 'rgb', 'img': img, 'kwargs': {'data_format': 'HWC'}} for img in imgs]
+            img_grid.append({'type': 'rgb', 'img': batch['rgb_1'].view(H, W, 3), 'kwargs': {'data_format': 'HWC'}}) # end with GT
+            self.save_image_grid(f"it{self.global_step}-pred/{self.config.dataset.view_idx}_RGB.png", img_grid)
+        elif pred_mode == 'anim': # generate states and export the animation video
+            img_paths = []
+            while i < (max_state+interval):
+                out = chunk_batch(self.model.forward_, self.config.model.ray_chunk, batch['rays'], scene_state=i)
+                fname = f"it{self.global_step}-anim/{self.config.dataset.view_idx}_state{round(i, 3)}.png"
+                self.save_rgb_image(fname, out['comp_rgb'].view(H, W, 3), data_format='HWC', data_range=(0, 1))
+                img_path = self.get_save_path(fname)
+                img_paths.append(img_path)
+                print('finish state ', i)
+                i += interval
+            # video
+            self.save_anim_video(f"it{self.global_step}-anim", img_paths, save_format='mp4', fps=10)
+        else:
+            raise NotImplementedError
 
     
     def convert_motion_format(self):
@@ -198,13 +163,15 @@ class RevoluteSystem(BaseSystem):
 
         # the output from the network is the rotation angle from t=0 to t=0.5   
         axis_d, half_angle = quaternion_to_axis_angle(quaternions) 
-        rot_angle = 2. * half_angle 
+        angle = 2. * half_angle 
         # convert to rotation matrix (from t=0 to t=1)
         if torch.isnan(axis_d).sum().item() > 0: # the rotation is an Identity Matrix
             axis_d = torch.ones(3, device=self.local_rank) # random direction
-            rot_angle = torch.zeros(1, device=self.local_rank)
+            angle = torch.zeros(1, device=self.local_rank)
         else:
-            R = R_from_axis_angle(axis_d, rot_angle)
+            R = R_from_axis_angle(axis_d, angle)
+        # convert to degree
+        rot_angle = torch.rad2deg(angle)
         motion = {
             'type': 'rotate',
             'axis_o': axis_o,

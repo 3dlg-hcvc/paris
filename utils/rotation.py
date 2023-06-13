@@ -7,7 +7,7 @@ def R_from_axis_angle(k: torch.tensor, theta: torch.tensor):
     k = F.normalize(k, p=2., dim=0)
     kx, ky, kz = k[0], k[1], k[2]
     cos, sin = torch.cos(theta), torch.sin(theta)
-    R = torch.zeros((3, 3))
+    R = torch.zeros((3, 3)).to(k)
     R[0, 0] = cos + (kx**2) * (1 - cos)
     R[0, 1] = kx * ky * (1 - cos) - kz * sin
     R[0, 2] = kx * kz * (1 - cos) + ky * sin
@@ -28,7 +28,7 @@ def axis_angle_to_quaternions(axis: torch.tensor, angle: torch.tensor):
     i = a[0] * sin_
     j = a[1] * sin_
     k = a[2] * sin_
-    q = torch.tensor([r, i, j, k], dtype=torch.float32)
+    q = torch.tensor([r, i, j, k], dtype=torch.float32).to(axis)
     return q
 
 def R_from_quaternions(quaternions: torch.tensor):
@@ -51,7 +51,7 @@ def R_from_quaternions(quaternions: torch.tensor):
         ),
         -1,
     )
-    return o.reshape(quaternions.shape[:-1] + (3, 3))
+    return o.reshape(quaternions.shape[:-1] + (3, 3)).to(quaternions)
 
 def _sqrt_positive_part(x: torch.Tensor) -> torch.Tensor:
     """
@@ -145,7 +145,7 @@ def R_from_6d(d6: torch.tensor):
     b2 = a2 - (b1 * a2).sum(-1, keepdim=True) * b1
     b2 = F.normalize(b2, dim=-1)
     b3 = torch.cross(b1, b2, dim=-1)
-    return torch.stack((b1, b2, b3), dim=-2)
+    return torch.stack((b1, b2, b3), dim=-2).to(d6)
 
 def quaternion_to_axis_angle(quaternions: torch.Tensor) -> torch.Tensor:
     """

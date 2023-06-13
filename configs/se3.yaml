@@ -1,12 +1,11 @@
 name: se3
 tag: '01'
 seed: 42
-source: sapien/foldingchair/100520
+source: sapien/fridge/10905
 exp_dir: ./exp/${source}/${name}
 
 dataset:
   name: blender_paris
-  scene: 103111
   root_dir: ./load/${source}/
   img_wh:
     - 800
@@ -15,14 +14,13 @@ dataset:
   val_scale: 0.1
   test_scale: 1.0
   pred_scale: 1.0
-  white_bkgd: true
-  spheric_poses: false
-  use_pixel_centers: true
   train_split: 'train'
   val_split: 'val'
   test_split: 'test'
   pred_split: 'pred'
-  view_idx: '0003' # the view for prediction
+  white_bkgd: true
+  spheric_poses: false
+  use_pixel_centers: true
 
 model:
   name: se3

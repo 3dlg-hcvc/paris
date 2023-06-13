@@ -238,6 +238,22 @@ class SaverMixin():
             for img in imgs:
                 writer.write(img)
             writer.release()
+    
+    def save_anim_video(self, filename, img_paths, save_format='mp4', fps=10):
+        assert save_format in ['gif', 'mp4']
+        if not filename.endswith(save_format):
+            filename += f".{save_format}"
+        imgs = [cv2.imread(f) for f in img_paths]
+        if save_format == 'gif':
+            imgs = [cv2.cvtColor(i, cv2.COLOR_BGR2RGB) for i in imgs]
+            imageio.mimsave(self.get_save_path(filename), imgs, fps=fps, palettesize=256)
+        elif save_format == 'mp4':
+            H, W, _ = imgs[0].shape
+            writer = cv2.VideoWriter(self.get_save_path(filename), cv2.VideoWriter_fourcc(*'mp4v'), fps, (W, H), True)
+            for img in imgs:
+                writer.write(img)
+            writer.release()
+
 
     def save_mesh_ply(self, filename, v_pos, t_pos_idx, v_rgb=None):
         v_pos, t_pos_idx = self.convert_data(v_pos), self.convert_data(t_pos_idx)
@@ -247,15 +263,15 @@ class SaverMixin():
             mesh.vertex_colors = o3d.utility.Vector3dVector(v_rgb)
         o3d.io.write_triangle_mesh(self.get_save_path(filename), mesh)
 
-    def save_misaligned_mesh(self, exp_path, src_path, R_align, t_align, is_obj_tran=True):
-        if not is_obj_tran:
-            R_align = np.linalg.inv(R_align)
-            t_align = -t_align
+    # def save_misaligned_mesh(self, exp_path, src_path, R_align, t_align, is_obj_tran=True):
+    #     if not is_obj_tran:
+    #         R_align = np.linalg.inv(R_align)
+    #         t_align = -t_align
         
-        src_mesh = o3d.io.read_triangle_mesh(src_path)
-        src_mesh.rotate(R_align, center=np.zeros(3))
-        src_mesh.translate(t_align)
-        o3d.io.write_triangle_mesh(exp_path, src_mesh)
+    #     src_mesh = o3d.io.read_triangle_mesh(src_path)
+    #     src_mesh.rotate(R_align, center=np.zeros(3))
+    #     src_mesh.translate(t_align)
+    #     o3d.io.write_triangle_mesh(exp_path, src_mesh)
     
     def save_trans_part_mesh(self, inp_filename, exp_filenames, motion):
         can_mesh = o3d.io.read_triangle_mesh(self.get_save_path(inp_filename))
