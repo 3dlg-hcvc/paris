@@ -18,21 +18,16 @@ dataset:
   val_split: 'val'
   test_split: 'test'
   pred_split: 'pred'
-
   white_bkgd: true
   spheric_poses: false
   use_pixel_centers: true
-  
   view_downsample: true
   n_downsample: 64
   random_downsample: false # if not, using farthest point sample
-
-  pred_mode: 'anim' # or "grid"
+  pred_mode: 'grid' # or "anim"
   view_idx: '0003' # the view for prediction
   max_state: 1 # the maximum state to be interpolated to from state 0
   n_interp: 3 # the number of intermediate states during interpolation
-
-
 model:
   name: revolute
   radius: 1.5
@@ -91,7 +86,6 @@ model:
       output_activation: Sigmoid
       n_neurons: 64
       n_hidden_layers: 2
-  
 system:
   name: revolute-system
   loss:
