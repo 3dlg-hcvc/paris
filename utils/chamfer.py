@@ -4,11 +4,7 @@ from pytorch3d.ops import sample_points_from_meshes
 from pytorch3d.io import load_ply
 from pytorch3d.structures import Meshes
 import torch
-import os.path as osp
 import open3d as o3d
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-
 
 
 def combine_pred_mesh(paths, exp_path):
