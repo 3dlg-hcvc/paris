@@ -9,7 +9,7 @@ Accepted by xxxx
 ## Setup
 We recommend the use of [miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage system dependencies. 
 
-Create an environment from the environment.yml file.
+Create an environment from the `environment.yml` file.
 ```
 conda env create -f environment.yml
 ```
