@@ -149,5 +149,6 @@ cython_debug/
 exp/
 load/
 data/
+pretrain/
 
 
