@@ -245,19 +245,19 @@ if __name__ == '__main__':
     The articulation is referred to PartNet-Mobility <mobility_v2_self.json> which is created from step 0
     '''
     # specify the object category
-    category = 'fridge'
+    category = 'laptop'
     # specify the model id to be loaded
-    model_id = '10905'     
+    model_id = '9996'     
     # specify the export identifier
-    model_id_exp = '10905'
+    model_id_exp = '9996'
     # specify the motion to generate new states
     motions = {
         'joint_id': 0, # joint id to be transformed (need to look up mobility_v2_self.json)
         'motion': {
-            # type of motion expected: "rotate or translate"
+            # type of motion expected: "rotate" or "translate"
             'type': 'rotate',   
             # range of the motion from start to end states
-            'rotate': [0., -60.], 
+            'rotate': [0., 60.], 
             'translate': [0., 0.],
         },
     }
