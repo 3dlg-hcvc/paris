@@ -23,7 +23,6 @@ class BlenderDatasetBase():
         self.view_downsample = self.config.get('view_downsample', False)
         self.n_downsample = self.config.get('n_downsample', 0)
 
-
         self.split = split
         if split == 'train':
             img_scale = self.config.train_scale
@@ -44,11 +43,9 @@ class BlenderDatasetBase():
             self.setup_pred(img_scale, view_idx=str(config.get('view_idx')).rjust(4, "0"))
             return
         
-
         # load data for two states
         self.K_0, self.all_c2w_0, self.all_images_0, self.all_fg_masks_0, self.directions_0, self.vis_cam_0 = self.load_data('start', img_scale)
         self.K_1, self.all_c2w_1, self.all_images_1, self.all_fg_masks_1, self.directions_1, self.vis_cam_1 = self.load_data('end', img_scale)
-
 
 
     def load_data(self, state, img_scale):
@@ -186,25 +183,6 @@ class BlenderDataModule(pl.LightningDataModule):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.misalign = self.config.get('misalign', False)
-        if self.misalign:         
-            R_align, t_align, axis_R_align = self.simulate_misalign(std_angle=self.config.std_angle, std_dist=self.config.std_dist)
-            config.update({"align_params": {
-                "R": R_align.tolist(),
-                "t": t_align.tolist(),
-                "axis_R": axis_R_align.tolist()
-            }})
-    
-    def simulate_misalign(self, std_angle=15, std_dist=0.01):
-        # rotation error
-        theta = np.radians(std_angle)
-        random_axis = np.random.normal(0., 1., 3)
-        R = get_rotation_axis_angle(random_axis, theta)
-        print('misalignment R: ', R)           
-        # translational error
-        t = np.random.normal(0., std_dist, 3)
-        print('misalignment t: ', t)
-        return R, t, random_axis
     
     def setup(self, stage=None):
         if stage in [None, 'fit']:
@@ -222,7 +200,6 @@ class BlenderDataModule(pl.LightningDataModule):
     def general_loader(self, dataset, batch_size):
         return DataLoader(
             dataset, 
-            # num_workers=os.cpu_count(), 
             num_workers=0, 
             batch_size=batch_size,
             pin_memory=True,
@@ -231,10 +208,7 @@ class BlenderDataModule(pl.LightningDataModule):
     def train_loader(self, dataset, batch_size) :
         return DataLoader(
             dataset, 
-            # num_workers=os.cpu_count(), 
-            # num_workers=len(os.sched_getaffinity(0)),
             num_workers=0,
-
             batch_size=batch_size,
             pin_memory=True,
         )

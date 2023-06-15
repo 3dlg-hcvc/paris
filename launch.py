@@ -53,10 +53,7 @@ if __name__ == '__main__':
     config.code_dir = config.get('code_dir') or os.path.join(config.exp_dir, config.trial_name, 'code')
     config.config_dir = config.get('config_dir') or os.path.join(config.exp_dir, config.trial_name, 'config')
 
-    if args.test and args.mesh_only:
-        config.mesh_only = True
-    else:
-        config.mesh_only = False
+    config.mesh_only = args.mesh_only
 
     logger = logging.getLogger('pytorch_lightning')
     if args.verbose:

@@ -21,7 +21,7 @@ dataset:
   white_bkgd: true
   spheric_poses: false
   use_pixel_centers: true
-  view_downsample: true
+  view_downsample: false
   n_downsample: 64
   random_downsample: false # if false, using farthest point sample
   view_idx: '0003' # the view for prediction (from test set)

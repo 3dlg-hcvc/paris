@@ -110,22 +110,23 @@ class BaseSystem(pl.LightningModule, SaverMixin):
 
     def validation_step(self, batch, batch_idx):
         outs = self.model(batch['rays_0'], batch['rays_1'])
-        # image metrics
-        psnr, ssim = self.evaluate_nvs(outs[0]['comp_rgb'], batch['rgb_0'], outs[1]['comp_rgb'], batch['rgb_1'])
-
         # convert format of motion params
         motion = self.convert_motion_format()
-        
-        # save the images
-        self.save_visuals(outs, batch, mode='val', draw_axis=True, motion=motion, elems=['gt', 'rgb', 'dep'])
-
-        del outs
+        if not self.config.get('mesh_only', False):
+            # image metrics
+            psnr, ssim = self.evaluate_nvs(outs[0]['comp_rgb'], batch['rgb_0'], outs[1]['comp_rgb'], batch['rgb_1'])
+            # save the images
+            self.save_visuals(outs, batch, mode='val', draw_axis=True, motion=motion, elems=['gt', 'rgb', 'dep'])
+            return {
+                'psnr': psnr,
+                'ssim': ssim,
+                'index': batch['index'],
+                'motion': motion,
+            }
         return {
-            'psnr': psnr,
-            'ssim': ssim,
             'index': batch['index'],
             'motion': motion,
-        }
+        } 
           
     
     """
@@ -138,21 +139,24 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         out = self.all_gather(out)
         if self.trainer.is_global_zero:
             self.save_metrics(out, mode='val')
-        del out
 
     def test_step(self, batch, batch_idx):  
-        outs = self(batch)
-        # image metrics
-        psnr, ssim = self.evaluate_nvs(outs[0]['comp_rgb'], batch['rgb_0'], outs[1]['comp_rgb'], batch['rgb_1'])
         # convert format of motion params
         motion = self.convert_motion_format()
-        # save the images
-        self.save_visuals(outs, batch, mode='test', draw_axis=False, motion=motion, elems=['gt', 'rgb', 'dep'])
-
-        del outs
+        # render images
+        if not self.config.get('mesh_only', False):
+            outs = self(batch)
+            # image metrics
+            psnr, ssim = self.evaluate_nvs(outs[0]['comp_rgb'], batch['rgb_0'], outs[1]['comp_rgb'], batch['rgb_1'])
+            # save the images
+            self.save_visuals(outs, batch, mode='test', draw_axis=False, motion=motion, elems=['gt', 'rgb', 'dep'])
+            return {
+                'psnr': psnr,
+                'ssim': ssim,
+                'index': batch['index'],
+                'motion': motion,
+            }
         return {
-            'psnr': psnr,
-            'ssim': ssim,
             'index': batch['index'],
             'motion': motion,
         }      
@@ -168,7 +172,9 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         from models.utils import chunk_batch
         pred_mode = self.config.dataset.get('pred_mode', 'grid')
         n_interp = self.config.dataset.get('n_interp', 3)
+        assert n_interp > 0 or n_interp == 0
         max_state= self.config.dataset.get('max_state',1)
+        assert max_state > 0 
         interval = max_state / (n_interp + 1)
         W, H = self.dataset.w, self.dataset.h
         i = 0
@@ -513,20 +519,29 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         it = int(self.global_step/2)
         motion = out[0]['motion']   
         motion_type = motion['type']
-
-        ## image metrics 
-        psnr, ssim = self.metrics_nvs(out, mode)
+        metrics = {}
 
         # export motion
         self.export_motion(motion, mode)
 
-        # metrics
-        metrics = {
-            "nvs": {
-                "psnr": psnr,
-                "ssim": ssim,
-            }
-        }
+        if not self.config.get('mesh_only', False):
+            # image metrics 
+            psnr, ssim = self.metrics_nvs(out, mode)
+            metrics.update({
+                "nvs": {
+                    "psnr": psnr,
+                    "ssim": ssim,
+                }
+            })
+            # video for the testing images
+            it = int(self.global_step/2)
+            self.save_img_sequence(
+                f"it{it}-test",
+                f"it{it}-test",
+                '(\d+)\.png',
+                save_format='mp4',
+                fps=10
+            )
 
         # metrics for motion estimation
         errs = self.metrics_motion(motion, mode)
@@ -548,32 +563,21 @@ class BaseSystem(pl.LightningModule, SaverMixin):
                 }
             }) 
 
-        if mode == 'test':
-            # export meshes
-            self.export_meshes(motion)
-            # save meshes for motion axis
-            self.save_axis(f'it{it}_axis.ply', motion)
+        # export meshes
+        self.export_meshes(motion)
+        # save meshes for motion axis
+        self.save_axis(f'it{it}_axis.ply', motion)
 
-            # metrics for surface quality
-            cd_s, cd_d_start, cd_w_start = self.metrics_surface()
+        # metrics for surface quality
+        cd_s, cd_d_start, cd_w_start = self.metrics_surface()
 
-            
-            # video for the testing images
-            it = int(self.global_step/2)
-            self.save_img_sequence(
-                f"it{it}-test",
-                f"it{it}-test",
-                '(\d+)\.png',
-                save_format='mp4',
-                fps=10
-            )
 
-            metrics.update({
-                "surface": {
-                    "CD-w": cd_w_start,
-                    "CD-s": cd_s,
-                    "CD-d": cd_d_start,
-                }
-            })
+        metrics.update({
+            "surface": {
+                "CD-w": cd_w_start,
+                "CD-s": cd_s,
+                "CD-d": cd_d_start,
+            }
+        })
         
         self.save_json(f'it{it}_{mode}_metrics.json', metrics)
