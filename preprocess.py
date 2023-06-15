@@ -2,15 +2,40 @@ import pymeshlab
 import numpy as np
 import json
 import os
-import sys
 import open3d as o3d
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(ROOT_DIR)
 from utils.axis import save_axis_mesh
 
 
 def normalize(v):
     return v / np.sqrt(np.sum(v**2))
+
+def rewrite_json_from_urdf(src_root):
+    root = 'data/PartNet-Mobility'
+    urdf_file = os.path.join(src_root, 'mobility.urdf')
+    from lxml import etree as ET
+    tree = ET.parse(urdf_file)
+    root = tree.getroot()
+    visuals_dict = {}
+    for link in root.iter('link'):
+        meshes = []
+        for visuals in link.iter('visual'):
+            meshes.append(visuals[1][0].attrib['filename'])
+        visuals_dict.update({link.attrib['name']: meshes})
+    
+    # load .json file as a dict
+    with open(os.path.join(src_root, 'mobility_v2.json'), 'r') as f:
+        meta = json.load(f)
+        f.close()
+    
+    # find mesh files in urdf and add to meta
+    for entry in meta:
+        link_name = 'link_{}'.format(entry['id'])
+        entry['visuals'] = visuals_dict[link_name]
+    
+    # write a self-used json file
+    with open(os.path.join(src_root, 'mobility_v2_self.json'), 'w') as json_out_file:
+        json.dump(meta, json_out_file)
+        json_out_file.close()
 
 def get_rotation_axis_angle(k, theta):
     '''
@@ -121,7 +146,7 @@ def export_axis_mesh(arti, exp_dir):
     save_axis_mesh(k, center, os.path.join(exp_dir, 'axis_rotate.ply'))
     save_axis_mesh(-k, center, os.path.join(exp_dir, 'axis_rotate_oppo.ply'))
 
-def generate_state(motions, src_root, exp_dir, state):
+def generate_state(arti_info, meta, src_root, exp_dir, state):
     joint_id = motions['joint_id']
     motion_type = motions['motion']['type']
     
@@ -215,7 +240,6 @@ def generate_state(motions, src_root, exp_dir, state):
     ]
     save_meshsets_ply(mss, fnames)
 
-    return arti_info
 
 def record_motion_json(motions, arti_info, dst_root):
     # coordinates changes from y-up to z-up
@@ -238,34 +262,11 @@ def record_motion_json(motions, arti_info, dst_root):
 
     return arti_info
 
-
-if __name__ == '__main__':
-    '''
-    This script is to generate object mesh for each state.
-    The articulation is referred to PartNet-Mobility <mobility_v2_self.json> which is created from step 0
-    '''
-    # specify the object category
-    category = 'laptop'
-    # specify the model id to be loaded
-    model_id = '9996'     
-    # specify the export identifier
-    model_id_exp = '9996'
-    # specify the motion to generate new states
-    motions = {
-        'joint_id': 0, # joint id to be transformed (need to look up mobility_v2_self.json)
-        'motion': {
-            # type of motion expected: "rotate" or "translate"
-            'type': 'rotate',   
-            # range of the motion from start to end states
-            'rotate': [0., 60.], 
-            'translate': [0., 0.],
-        },
-    }
+def main(model_id, motions, src_root, dst_root):
     # states to be generated
     states = ['start', 'end']
-    # paths
-    src_root = os.path.join(ROOT_DIR, 'data/PartNet-Mobility', model_id)
-    dst_root =  os.path.join(ROOT_DIR, f'data/sapien/{category}', model_id_exp, 'textured_objs')
+    # create a json file with mesh info from urdf
+    rewrite_json_from_urdf(src_root)
 
     # load articulations (y-up frame)
     arti_info, meta = load_articulation(src_root, motions['joint_id'])
@@ -273,7 +274,7 @@ if __name__ == '__main__':
     for state in states:
         exp_dir = os.path.join(dst_root, state)
         os.makedirs(exp_dir, exist_ok=True)
-        generate_state(motions, src_root, exp_dir, state)
+        generate_state(arti_info, meta, src_root, exp_dir, state)
         print(f'{state} done')
 
     # backup transformation json, convert articulation to z-up frame
@@ -281,3 +282,35 @@ if __name__ == '__main__':
 
     # save mesh for motion axis
     export_axis_mesh(arti, dst_root)
+
+if __name__ == '__main__':
+    '''
+    This script is to generate object mesh for each state.
+    The articulation is referred to PartNet-Mobility <mobility_v2.json>
+    '''
+    # specify the object category
+    category = 'laptop'
+    # specify the model id to be loaded
+    model_id = '10211'     
+    # specify the export identifier
+    model_id_exp = '10211'
+    # specify the motion to generate new states
+    motions = {
+        'joint_id': 1, # joint id to be transformed (need to look up mobility_v2_self.json)
+        'motion': {
+            # type of motion expected: "rotate" or "translate"
+            'type': 'rotate',   
+            # range of the motion from start to end states
+            'rotate': [20., -20.], 
+            'translate': [0., 0.],
+        },
+    }
+    
+    # paths
+    src_root = os.path.join('data/PartNet-Mobility', model_id)
+    dst_root =  os.path.join(f'data/sapien/{category}', model_id_exp, 'textured_objs')
+
+    main(model_id, motions, src_root, dst_root)
+
+
+    
