@@ -1,4 +1,5 @@
-# PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects
+# PARIS
+PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects
 
 Authors
 
@@ -18,9 +19,51 @@ Then install the torch bindings for [tiny-cuda-nn](https://github.com/NVlabs/tin
 ```
 pip install ninja git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
 ```
+
 ## Data
 We release both synthetic and real data shown in the paper [here](https://aspis.cmpt.sfu.ca/projects/paris/datasets.zip). After downloaded, folders `data` and `load` should be put directly under the project directory.
+```
+PARIS
+├── data                    # for GT motion and meshes
+│   ├── sapien              # synthetic data
+│   │   │   ├── [category]        
+│   ├── realscan            # real scan data
+│   │   │   ├── [category]  
+├── load                    # for input RGB images
 
-Our synthetic data is preprocessed from the [PartNet-Mobility](https://sapien.ucsd.edu/browse) dataset. If you want to try out more examples, you can refer to `preprocess.py` to generate the two input states by articulating one part and save the meshes.
+```
+
+Our synthetic data is preprocessed from the [PartNet-Mobility](https://sapien.ucsd.edu/browse) dataset. If you would like to try out more examples, you can refer to `preprocess.py` to generate the two input states by articulating one part and save the meshes. Then you can render the multi-view images with `<state>.obj` as training data.
+
+## Run
+### Test Pretrained Models
+Downloaded pretrained models from [here](https://aspis.cmpt.sfu.ca/projects/paris/pretrain.zip) and put the folder under the project directory.
+
+You can render the intermediate states of the object by trying the `--predict` mode.
+```
+python launch.py --predict \
+        --config pretrain/storage/config/parsed.yaml \
+        --resume pretrain/storage/ckpt/last.ckpt \
+        dataset.n_interp=3   # the number of interpolated states to show
+```
+This will give you a image grid under `exp/sapien/storage` folder as below. It shows the interpolation from state t=0 to t=1 with ground truth at both ends.
+![image](assets/0042_storage.png)
+
+You can also save test images, part geometries and motion estimation by trying the `--test` mode. It could take a few minutes to render all the test images. You can optionally add `--mesh_only` to skip the rendering process.
+```
+python launch.py --test \
+        --config pretrain/storage/config/parsed.yaml \
+        --resume pretrain/storage/ckpt/last.ckpt
+```
+### Training
+Run `python launch.py --train` to train the model from the scratch.  For example, to train the storage above, run the following command:
+```
+python launch.py --train \
+        --config configs/prismatic.yaml \
+        source=sapien/storage/45135 
+```
+For objects with a revolute joint, run with `--config configs/revolute.yaml`. 
+
+If the motion type is not given, it can be also estimated by running with `--config configs/se3.yaml` in ~5k steps. We recommend to switch back to the specialized configuration once the motion type is known to further estimate other motion parameters for better performance. Please check out our paper for details.
 
 ## Citation

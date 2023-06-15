@@ -6,7 +6,7 @@ from datetime import datetime
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='configs/d2nerf.yaml', help='path to config file')
+    parser.add_argument('--config', default='configs/revolute.yaml', help='path to config file')
     parser.add_argument('--gpu', default='0', help='GPU(s) to be used')
     parser.add_argument('--resume', default=None, help='path to the weights to be resumed')
     parser.add_argument(
