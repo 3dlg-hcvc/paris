@@ -2,6 +2,7 @@ import torch
 import pytorch_lightning as pl
 import torch.nn.functional as F
 import models
+from tqdm import tqdm
 from models.ray_utils import get_rays
 from systems.utils import parse_optimizer, parse_scheduler, update_module_step, proj2img, load_gt_info
 from utils.mixins import SaverMixin
@@ -177,15 +178,15 @@ class BaseSystem(pl.LightningModule, SaverMixin):
         assert max_state > 0 
         interval = max_state / (n_interp + 1)
         W, H = self.dataset.w, self.dataset.h
-        i = 0
+        state_i = 0
         if pred_mode == 'grid': # concat the image grid from state 0 to state max_state
             imgs = []
-            while i < (max_state+interval):
-                out = chunk_batch(self.model.forward_, self.config.model.ray_chunk, batch['rays'], scene_state=i)
+            for k in tqdm(range(n_interp+2)):
+                out = chunk_batch(self.model.forward_, self.config.model.ray_chunk, batch['rays'], scene_state=state_i)
                 img = out['comp_rgb'].view(H, W, 3)
                 imgs.append(img)
-                print('finish state ', i)
-                i += interval
+                # print('finish state ', state_i)
+                state_i += interval
             # image grid
             img_grid = [{'type': 'rgb', 'img': batch['rgb_0'].view(H, W, 3), 'kwargs': {'data_format': 'HWC'}}] # start with GT
             img_grid += [{'type': 'rgb', 'img': img, 'kwargs': {'data_format': 'HWC'}} for img in imgs]
@@ -193,16 +194,19 @@ class BaseSystem(pl.LightningModule, SaverMixin):
             self.save_image_grid(f"it{self.global_step}-pred/{self.config.dataset.view_idx}_RGB.png", img_grid)
         elif pred_mode == 'anim': # generate states and export the animation video
             img_paths = []
-            while i < (max_state+interval):
-                out = chunk_batch(self.model.forward_, self.config.model.ray_chunk, batch['rays'], scene_state=i)
-                fname = f"it{self.global_step}-anim/{self.config.dataset.view_idx}_state{round(i, 3)}.png"
+            for k in tqdm(range(n_interp+2)):
+                out = chunk_batch(self.model.forward_, self.config.model.ray_chunk, batch['rays'], scene_state=state_i)
+                fname = f"it{self.global_step}-anim/{self.config.dataset.view_idx}_state{round(state_i, 3)}.png"
                 self.save_rgb_image(fname, out['comp_rgb'].view(H, W, 3), data_format='HWC', data_range=(0, 1))
                 img_path = self.get_save_path(fname)
                 img_paths.append(img_path)
-                print('finish state ', i)
-                i += interval
+                # print('finish state ', i)
+                state_i += interval
             # video
             self.save_anim_video(f"it{self.global_step}-anim", img_paths, save_format='mp4', fps=10)
+            # gif
+            self.save_anim_video(f"it{self.global_step}-anim", img_paths, save_format='gif', fps=10)
+
         else:
             raise NotImplementedError
 

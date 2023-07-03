@@ -245,7 +245,9 @@ class SaverMixin():
         imgs = [cv2.imread(f) for f in img_paths]
         if save_format == 'gif':
             imgs = [cv2.cvtColor(i, cv2.COLOR_BGR2RGB) for i in imgs]
-            imageio.mimsave(self.get_save_path(filename), imgs, fps=fps, palettesize=256)
+            reversed_imgs = imgs.copy()
+            reversed_imgs.reverse()
+            imageio.mimsave(self.get_save_path(filename), imgs+reversed_imgs, fps=fps, palettesize=256)
         elif save_format == 'mp4':
             H, W, _ = imgs[0].shape
             writer = cv2.VideoWriter(self.get_save_path(filename), cv2.VideoWriter_fourcc(*'mp4v'), fps, (W, H), True)
