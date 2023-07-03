@@ -67,3 +67,5 @@ For objects with a revolute joint, run with `--config configs/revolute.yaml`.
 If the motion type is not given, it can be also estimated by running with `--config configs/se3.yaml` in ~5k steps. We recommend to switch back to the specialized configuration once the motion type is known to further estimate other motion parameters for better performance. Please check out our paper for details.
 
 ## Citation
+TBD
+## Aknowledgements
