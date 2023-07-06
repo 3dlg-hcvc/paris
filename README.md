@@ -49,13 +49,26 @@ python launch.py --predict \
 ```
 This will give you a image grid under `exp/sapien/storage` folder as below. It shows the interpolation from state t=0 to t=1 with ground truth at both ends.
 ![image](assets/0042_storage.png)
+<details>
+  <summary>Got errors running the command above?</summary>
 
-You can also save test images, part geometries and motion estimation by trying the `--test` mode. It could take a few minutes to render all the test images. You can optionally add `--mesh_only` to skip the rendering process.
+  If you are not on a local machine, you might encounter an issue from `opencv` and `open3d` saying
+  ```
+  ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+  ```
+  You can obtain the missing files by installing `libglfw3-dev`
+
+  ```
+  apt update && apt install -y libglfw3-dev
+  ```
+</details>
+You can also render test images, reconstruct part geometries and get motion estimation by trying the `--test` mode. It could take a while to render all the 50 images. You can optionally add `--mesh_only` to skip the rendering process.
 ```
 python launch.py --test \
         --config pretrain/storage/config/parsed.yaml \
         --resume pretrain/storage/ckpt/last.ckpt
 ```
+
 ### Training
 Run `python launch.py --train` to train the model from the scratch.  For example, to train the storage above, run the following command:
 ```
