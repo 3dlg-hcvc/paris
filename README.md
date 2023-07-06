@@ -1,7 +1,7 @@
 # PARIS
-PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects
+#### PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects
 
-Authors
+![image](assets/pipeline.png)
 
 Under review
 
@@ -13,6 +13,7 @@ We recommend the use of [miniconda](https://docs.conda.io/en/latest/miniconda.ht
 Create an environment from the `environment.yml` file.
 ```
 conda env create -f environment.yml
+conda activate paris
 ```
 
 Then install the torch bindings for [tiny-cuda-nn](https://github.com/NVlabs/tiny-cuda-nn):
