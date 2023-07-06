@@ -21,7 +21,7 @@ pip install ninja git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindi
 ```
 
 ## Data
-We release both synthetic and real data shown in the paper [here](https://aspis.cmpt.sfu.ca/projects/paris/datasets.zip). After downloaded, folders `data` and `load` should be put directly under the project directory.
+We release both synthetic and real data shown in the paper [here](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip). After downloaded, folders `data` and `load` should be put directly under the project directory.
 ```
 PARIS
 ├── data                    # for GT motion and meshes
