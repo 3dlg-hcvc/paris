@@ -5,7 +5,7 @@
 
 Under review
 
-[Project page]() | [Paper]() | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
+[Project](https://3dlg-hcvc.github.io/paris/) | [Paper]() | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
 
 ## Setup
 We recommend the use of [miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage system dependencies. 
