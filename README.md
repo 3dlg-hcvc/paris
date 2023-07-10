@@ -8,7 +8,7 @@ Under review
 [Project](https://3dlg-hcvc.github.io/paris/) | [Paper]() | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
 
 ## Setup
-We recommend the use of [miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage system dependencies. 
+We recommend the use of [miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage system dependencies. The environment was tested on Ubuntu 20.04.4 LTS with a single GPU (12 GB memory required at minimum).
 
 Create an environment from the `environment.yml` file.
 ```
