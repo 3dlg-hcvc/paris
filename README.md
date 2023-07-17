@@ -10,7 +10,9 @@ Accepted by ICCV 2023
 
 [Project](https://3dlg-hcvc.github.io/paris/) | [Paper]() | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
 
-![image](assets/teaser.png)
+<img src="assets/teaser.png" alt="drawing" style="width:80%"/>
+
+<!-- ![image](assets/teaser.png) -->
 
 ## Setup
 We recommend the use of [miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage system dependencies. The environment was tested on Ubuntu 20.04.4 LTS with a single GPU (12 GB memory required at minimum).
