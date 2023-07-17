@@ -12,7 +12,6 @@ Accepted by ICCV 2023
 
 <img src="assets/teaser.png" alt="drawing" style="width:80%"/>
 
-<!-- ![image](assets/teaser.png) -->
 
 ## Setup
 We recommend the use of [miniconda](https://docs.conda.io/en/latest/miniconda.html) to manage system dependencies. The environment was tested on Ubuntu 20.04.4 LTS with a single GPU (12 GB memory required at minimum).
@@ -69,7 +68,8 @@ This will give you a image grid under `exp/sapien/storage` folder as below. It s
   apt update && apt install -y libglfw3-dev
   ```
 </details>
-You can also render test images, reconstruct part geometries and get motion estimation by trying the `--test` mode. It could take a while to render all the 50 images. You can optionally add `--mesh_only` to skip the rendering process.
+You can also render test images, reconstruct part geometries and get motion estimation by trying the `--test` mode. It could take a while to render all the 50 images. You can optionally add `--mesh_only` to skip the rendering process and only save the extracted meshes for each part.
+
 ```
 python launch.py --test \
         --config pretrain/storage/config/parsed.yaml \
