@@ -4,7 +4,7 @@
 ### PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects
 
 
-[Jiayi Liu](sevenljy.github.io), [Ali Mahdavi-Amiri](https://www.sfu.ca/~amahdavi/), [Manolis Savva](https://msavva.github.io/)
+[Jiayi Liu](https://sevenljy.github.io/), [Ali Mahdavi-Amiri](https://www.sfu.ca/~amahdavi/), [Manolis Savva](https://msavva.github.io/)
 
 Accepted by ICCV 2023
 
