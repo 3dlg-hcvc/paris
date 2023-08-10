@@ -51,7 +51,7 @@
               Articulated Objects</h1>
             <div class="is-size-5 publication-authors">
               <span class="author-block">
-                <a href="">Jiayi Liu</a>,</span>
+                <a href="https://sevenljy.github.io/">Jiayi Liu</a>,</span>
               <span class="author-block">
                 <a href="https://www.sfu.ca/~amahdavi/">Ali Mahdavi-Amiri</a>,</span>
               <span class="author-block">
@@ -245,7 +245,16 @@
           <div class="content has-text-justified">
             <h3 class="title is-3">Methods Overview</h3>
             <img src="./static/images/pipeline.png" class="interpolation-image" alt="Interpolation end reference image." />
+            <p>
+              We design a self-supervised approach without relying any 3D supervision, semantic or motion annotations. 
+              The key idea is that we separate the parts from two-state observations by leveraging motion as a cue. 
+              Since the motion accounts for the inconsistency between two states, 
+              we optimize the motion parameters by registering the moving parts from the input states t to a canonical state t*. 
+              During registration, the component that agrees with the transformation is extracted as the movable part. 
+              And the one remaining still is extracted as the static part.
+            </p>
           </div>
+          
           <!-- Methods. -->
 
           <!-- Reconstruction. -->
@@ -291,11 +300,12 @@
     <div class="container is-max-desktop content">
       <h2 class="title">BibTeX</h2>
       <pre><code>
-        @article{jiayi2023paris,
+      @inproceedings{jiayi2023paris,
           author    = {Liu, Jiayi and Mahdavi-Amiri, Ali and Savva, Manolis},
-          title     = {PARIS: PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects},
+          title     = {{PARIS}: Part-level Reconstruction and Motion Analysis for Articulated Objects},
           year      = {2023},
-        }
+          booktitle = {Proceedings of the IEEE International Conference on Computer Vision (ICCV)}
+      }
       </code></pre>
     </div>
   </section>

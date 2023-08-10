@@ -4,7 +4,7 @@
 ### PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects
 
 
-[Jiayi Liu](), [Ali Mahdavi-Amiri](https://www.sfu.ca/~amahdavi/), [Manolis Savva](https://msavva.github.io/)
+[Jiayi Liu](sevenljy.github.io), [Ali Mahdavi-Amiri](https://www.sfu.ca/~amahdavi/), [Manolis Savva](https://msavva.github.io/)
 
 Accepted by ICCV 2023
 
@@ -89,11 +89,12 @@ If the motion type is not given, it can be also estimated by running with `--con
 
 ## Citation
 ```
-@article{jiayi2023paris,
+@inproceedings{jiayi2023paris,
         author    = {Liu, Jiayi and Mahdavi-Amiri, Ali and Savva, Manolis},
-        title     = {PARIS: PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects},
+        title     = {{PARIS}: Part-level Reconstruction and Motion Analysis for Articulated Objects},
         year      = {2023},
+        booktitle = {Proceedings of the IEEE International Conference on Computer Vision (ICCV)}
 }
 ```
 ## Aknowledgements
-The NeRF implementation is powered by [tiny-cuda-nn](!https://github.com/NVlabs/tiny-cuda-nn) and [nerfacc](!https://github.com/KAIR-BAIR/nerfacc). Please check out their great work for more details!
+The NeRF implementation is powered by [tiny-cuda-nn](https://github.com/NVlabs/tiny-cuda-nn) and [nerfacc](https://github.com/KAIR-BAIR/nerfacc). Please check out their great work for more details!

@@ -250,8 +250,11 @@ class SaverMixin():
             imageio.mimsave(self.get_save_path(filename), imgs+reversed_imgs, fps=fps, palettesize=256)
         elif save_format == 'mp4':
             H, W, _ = imgs[0].shape
+            reversed_imgs = imgs.copy()
+            reversed_imgs.reverse()
+            all_imgs = imgs + reversed_imgs
             writer = cv2.VideoWriter(self.get_save_path(filename), cv2.VideoWriter_fourcc(*'mp4v'), fps, (W, H), True)
-            for img in imgs:
+            for img in all_imgs:
                 writer.write(img)
             writer.release()
 
