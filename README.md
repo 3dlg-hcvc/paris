@@ -97,4 +97,4 @@ If the motion type is not given, it can be also estimated by running with `--con
 }
 ```
 ## Aknowledgements
-The NeRF implementation is powered by [tiny-cuda-nn](https://github.com/NVlabs/tiny-cuda-nn) and [nerfacc](https://github.com/KAIR-BAIR/nerfacc). Please check out their great work for more details!
+The NeRF implementation is powered by [tiny-cuda-nn](https://github.com/NVlabs/tiny-cuda-nn) and [nerfacc](https://github.com/KAIR-BAIR/nerfacc). The codebase is partially borrowed from [instant-nsr-pl](https://github.com/bennyguo/instant-nsr-pl). Please check out their great work for more details!
