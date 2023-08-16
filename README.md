@@ -8,7 +8,7 @@
 
 Accepted by ICCV 2023
 
-[Project](https://3dlg-hcvc.github.io/paris/) | [Paper]() | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
+[Project](https://3dlg-hcvc.github.io/paris/) | [Paper](https://arxiv.org/abs/2308.07391) | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
 
 <img src="assets/teaser.png" alt="drawing" style="width:80%"/>
 
