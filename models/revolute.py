@@ -32,7 +32,7 @@ class RevoluteModel(BaseModel):
             self.grid_warmup = self.config['grid_warmup']
             self.occupancy_grid = OccupancyGrid(
                 roi_aabb=self.scene_aabb,
-                resolution=128, # the resolution is open to discuss
+                resolution=128, 
                 contraction_type=ContractionType.AABB
             )
         self.randomized = self.config.randomized

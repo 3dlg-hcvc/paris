@@ -19,9 +19,9 @@ class SE3Model(BaseModel):
 
         init_angle = self.config.get('init_angle', 0.1)
         init_dir = self.config.get('init_dir', [1., 1., 1.])
-        self.quaternions = nn.Parameter(self.init_quaternions(half_angle=init_angle, init_dir=init_dir), requires_grad=True) # real part first
-        self.translation = nn.Parameter(torch.tensor([0.001, 0.001, 0.001], dtype=torch.float32), requires_grad=True) # edit: temp ignore
-        self.canonical = 0.5 # the canonical state ranging in [0, 1]
+        self.quaternions = nn.Parameter(self.init_quaternions(half_angle=init_angle, init_dir=init_dir), requires_grad=True) 
+        self.translation = nn.Parameter(torch.tensor([0.001, 0.001, 0.001], dtype=torch.float32), requires_grad=True) 
+        self.canonical = 0.5 
 
         self.register_buffer('scene_aabb', torch.as_tensor([-self.config.radius, -self.config.radius, -self.config.radius, self.config.radius, self.config.radius, self.config.radius], dtype=torch.float32))
         if self.config.grid_prune:
@@ -62,7 +62,6 @@ class SE3Model(BaseModel):
     
     def init_quaternions(self, half_angle, init_dir):
         a = torch.tensor([init_dir[0], init_dir[1], init_dir[2]], dtype=torch.float32)
-        # a = torch.tensor([1., 1., 1.], dtype=torch.float32)
         a = torch.nn.functional.normalize(a, p=2., dim=0)
         sin_ = sin(half_angle)
         cos_ = cos(half_angle)
@@ -189,7 +188,6 @@ class SE3Model(BaseModel):
             }
 
         with torch.no_grad():
-            # [edit] nerfacc 0.3.2
             ray_indices, t_starts, t_ends = ray_marching(
                 rays_o, rays_d,
                 scene_aabb=self.scene_aabb,
@@ -200,7 +198,6 @@ class SE3Model(BaseModel):
             )
         render_out = composite_rendering(ray_indices, t_starts, t_ends)
 
-        # render_out = composite_rendering(packed_info, t_starts, t_ends)
         if self.training:
             return {
                 'comp_rgb': render_out['rgb'],
