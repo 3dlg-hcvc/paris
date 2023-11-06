@@ -90,10 +90,11 @@ If the motion type is not given, it can be also estimated by running with `--con
 ## Citation
 ```
 @inproceedings{jiayi2023paris,
-        author    = {Liu, Jiayi and Mahdavi-Amiri, Ali and Savva, Manolis},
-        title     = {{PARIS}: Part-level Reconstruction and Motion Analysis for Articulated Objects},
-        year      = {2023},
-        booktitle = {Proceedings of the IEEE International Conference on Computer Vision (ICCV)}
+  title={PARIS: Part-level Reconstruction and Motion Analysis for Articulated Objects},
+  author={Liu, Jiayi and Mahdavi-Amiri, Ali and Savva, Manolis},
+  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
+  pages={352--363},
+  year={2023}
 }
 ```
 ## Aknowledgements
