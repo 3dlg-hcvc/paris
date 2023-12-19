@@ -8,7 +8,7 @@
 
 Accepted by ICCV 2023
 
-[Project](https://3dlg-hcvc.github.io/paris/) | [Paper](https://arxiv.org/abs/2308.07391) | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
+[Project](https://3dlg-hcvc.github.io/paris/) | [Arxiv](https://arxiv.org/abs/2308.07391) | [Paper](https://openaccess.thecvf.com/content/ICCV2023/papers/Liu_PARIS_Part-level_Reconstruction_and_Motion_Analysis_for_Articulated_Objects_ICCV_2023_paper.pdf) | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
 
 <img src="assets/teaser.png" alt="drawing" style="width:80%"/>
 
