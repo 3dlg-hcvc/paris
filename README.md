@@ -6,9 +6,9 @@
 
 [Jiayi Liu](https://sevenljy.github.io/), [Ali Mahdavi-Amiri](https://www.sfu.ca/~amahdavi/), [Manolis Savva](https://msavva.github.io/)
 
-Accepted by ICCV 2023
+Presented at ICCV 2023
 
-[Project](https://3dlg-hcvc.github.io/paris/) | [Arxiv](https://arxiv.org/abs/2308.07391) | [Paper](https://openaccess.thecvf.com/content/ICCV2023/papers/Liu_PARIS_Part-level_Reconstruction_and_Motion_Analysis_for_Articulated_Objects_ICCV_2023_paper.pdf) | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip)
+[Project](https://3dlg-hcvc.github.io/paris/) | [Arxiv](https://arxiv.org/abs/2308.07391) | [Paper](https://openaccess.thecvf.com/content/ICCV2023/papers/Liu_PARIS_Part-level_Reconstruction_and_Motion_Analysis_for_Articulated_Objects_ICCV_2023_paper.pdf) | [Data](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip) (alternative link for data: [OneDrive](https://1sfu-my.sharepoint.com/:u:/g/personal/jla861_sfu_ca/EeEggZVIENFJm6ZEORQ8QwIBhhlY9El1amq8A9zLl0WQJA?e=Tfs0N7))
 
 <img src="assets/teaser.png" alt="drawing" style="width:80%"/>
 
@@ -28,7 +28,8 @@ pip install ninja git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindi
 ```
 
 ## Data
-We release both synthetic and real data shown in the paper [here](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip). After downloaded, folders `data` and `load` should be put directly under the project directory.
+We release both synthetic and real data shown in the paper [here](https://aspis.cmpt.sfu.ca/projects/paris/dataset.zip). Once downloaded, folders `data` and `load` should be put directly under the project directory.
+If you find it slow to download the data from our server, please try this [OneDrive](https://1sfu-my.sharepoint.com/:u:/g/personal/jla861_sfu_ca/EeEggZVIENFJm6ZEORQ8QwIBhhlY9El1amq8A9zLl0WQJA?e=Tfs0N7) link instead.
 ```
 PARIS
 ├── data                    # for GT motion and meshes
