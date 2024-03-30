@@ -221,6 +221,7 @@ class SaverMixin():
             filename += f".{save_format}"
         matcher = re.compile(matcher)
         img_dir = os.path.join(self.save_dir, img_dir)
+        os.makedirs(img_dir, exist_ok=True)
         imgs = []
         for f in os.listdir(img_dir):
             if matcher.search(f):
@@ -265,6 +266,7 @@ class SaverMixin():
         mesh = o3d.geometry.TriangleMesh(vertices=vertices, triangles=faces)
         if v_rgb is not None:
             mesh.vertex_colors = o3d.utility.Vector3dVector(v_rgb)
+        import pdb; pdb.set_trace()
         o3d.io.write_triangle_mesh(self.get_save_path(filename), mesh)
     
     def save_trans_part_mesh(self, inp_filename, exp_filenames, motion):

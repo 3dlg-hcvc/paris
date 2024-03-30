@@ -537,15 +537,16 @@ class BaseSystem(pl.LightningModule, SaverMixin):
                     "ssim": ssim,
                 }
             })
-            # video for the testing images
-            it = int(self.global_step/2)
-            self.save_img_sequence(
-                f"it{it}-test",
-                f"it{it}-test",
-                '(\d+)\.png',
-                save_format='mp4',
-                fps=10
-            )
+            if mode == 'test':
+                # video for the testing images
+                it = int(self.global_step/2)
+                self.save_img_sequence(
+                    f"it{it}-test",
+                    f"it{it}-test",
+                    '(\d+)\.png',
+                    save_format='mp4',
+                    fps=10
+                )
 
         # metrics for motion estimation
         errs = self.metrics_motion(motion, mode)
