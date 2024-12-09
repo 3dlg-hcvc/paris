@@ -15,10 +15,10 @@ def remove_cube():
     bpy.data.objects['Cube'].select_set(True)
     bpy.ops.object.delete()
 
-
 def camera_setting(exp_dir, n_frames=100, stage='train', track_to='start'):
     '''Set the render setting for the camera and the scene'''
-    bpy.context.scene.render.engine = 'BLENDER_WORKBENCH'
+    # bpy.context.scene.render.engine = 'BLENDER_WORKBENCH'
+    bpy.context.scene.render.engine = 'BLENDER_EEVEE'
 
     remove_cube()
 
@@ -27,7 +27,6 @@ def camera_setting(exp_dir, n_frames=100, stage='train', track_to='start'):
     cam_obj = bpy.data.objects['Camera']
     constraint = cam_obj.constraints.new('TRACK_TO')
     constraint.target = bpy.data.objects[track_to]
-    cam_obj.constraints["Track To"].target = bpy.data.objects[track_to]
     bpy.context.scene.frame_end = n_frames - 1
     bpy.context.scene.frame_start = 0
     bpy.context.scene.render.resolution_x = 800
@@ -35,6 +34,7 @@ def camera_setting(exp_dir, n_frames=100, stage='train', track_to='start'):
     bpy.context.scene.render.image_settings.color_mode = 'RGBA'
     bpy.context.scene.render.filepath = f'{exp_dir}/{stage}/'
     bpy.context.scene.render.film_transparent = True
+
 
     radius = 3.2 # distance from the origin
     if stage == 'test':  # turntable
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     os.makedirs(args.dst_dir, exist_ok=True)
 
     # STEP 0: Load .obj files into the blender scene
-    bpy.ops.wm.obj_import(filepath=args.src_dir)
+    bpy.ops.wm.obj_import(filepath=args.src_dir, import_vertex_groups=True)
 
     # STEP 1: Config the camera setting
     fname = os.path.basename(args.src_dir)
