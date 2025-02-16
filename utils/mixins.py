@@ -275,7 +275,7 @@ class SaverMixin():
 
         if motion['type'] == 'rotate':
             axis_d = motion['axis_d'].cpu().squeeze(0)
-            rot_ang = motion['rot_angle'].cpu().squeeze(0)
+            rot_ang = motion['rot_angle'].cpu().squeeze(0)/2
             axis_o = motion['axis_o'].cpu().squeeze(0).numpy()
             R_start = R_from_axis_angle(axis_d, -torch.deg2rad(rot_ang)).numpy()
             R_end = R_from_axis_angle(axis_d, torch.deg2rad(rot_ang)).numpy()
@@ -283,7 +283,7 @@ class SaverMixin():
             end_mesh.rotate(R_end, center=axis_o)
         elif motion['type'] == 'translate':
             axis_d = motion['axis_d'].cpu().squeeze(0)
-            dist = motion['dist'].cpu().squeeze(0)
+            dist = motion['dist'].cpu().squeeze(0)/2
             d = F.normalize(axis_d, p=2, dim=0)
             start_mesh.translate(-dist * d)
             end_mesh.translate(dist * d)
